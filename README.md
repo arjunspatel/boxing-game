@@ -1,10 +1,15 @@
 # 🥊 Camera-Based Boxing Game
 
-A motion-controlled boxing game that uses MediaPipe (or similar tools) to detect player movements and control a boxer avatar.
+A motion-controlled boxing game that uses MediaPipe to detect player hand movements and control a boxer avatar in real-time.
 
 ## How to Run
 
-Open `index.html` in your browser to see the placeholder graphics demo.
+1. Open `index.html` in your browser (Chrome recommended)
+2. Click **"Start Camera"** to enable webcam access
+3. Stand back so the camera can see both your hands
+4. Move your hands to control the boxer!
+
+> **Note:** You need to allow camera permissions when prompted. The game works best with good lighting and a clear background.
 
 ## Current Features
 
@@ -68,9 +73,26 @@ The camera feed is divided into a 2x3 grid to detect glove positions:
 - **Shift+Click** to place the right glove (cyan)
 - The stance will automatically update based on glove positions
 
+## Technology
+
+### MediaPipe Hands
+The game uses [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands.html) - a free, open-source hand tracking solution from Google that runs entirely in the browser.
+
+- **Real-time tracking** of up to 2 hands
+- **21 landmarks per hand** for precise detection
+- **No server required** - all processing happens locally
+- **Works on most modern devices** with a webcam
+
+### How Detection Works
+1. Camera feed is captured via WebRTC
+2. MediaPipe processes each frame to detect hands
+3. Hand positions are mapped to the 2x3 grid
+4. Grid positions determine which stance to display
+5. Boxer avatar updates in real-time
+
 ## Planned Features
 
-- [ ] MediaPipe integration for real-time hand tracking
+- [x] MediaPipe integration for real-time hand tracking
 - [ ] Opponent boxer AI
 - [ ] Health bars and scoring system
 - [ ] Punch impact animations

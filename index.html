@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Game - Placeholder Graphics</title>
+    <title>Boxing Game - MediaPipe Hand Tracking</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -56,6 +59,73 @@
             margin: 0 auto;
         }
         
+        .camera-area {
+            background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .camera-area h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #4ecdc4;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 320px;
+            height: 240px;
+        }
+        
+        #webcam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 240px;
+            border-radius: 10px;
+            transform: scaleX(-1);
+        }
+        
+        #cameraCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 240px;
+            border-radius: 10px;
+            transform: scaleX(-1);
+        }
+        
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 240px;
+            pointer-events: none;
+            border-radius: 10px;
+            overflow: hidden;
+            transform: scaleX(-1);
+        }
+        
+        .grid-overlay .grid-line-v {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .grid-overlay .grid-line-h {
+            position: absolute;
+            left: 0;
+            height: 2px;
+            width: 100%;
+            background: rgba(255,255,255,0.3);
+        }
+        
         .controls {
             background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
             border-radius: 15px;
@@ -105,6 +175,11 @@
         .grid-cell.active-right {
             background: #4ecdc4;
             border-color: #7eddd6;
+        }
+        
+        .grid-cell.active-both {
+            background: linear-gradient(135deg, #e94560 50%, #4ecdc4 50%);
+            border-color: #fff;
         }
         
         .stance-buttons {
@@ -174,10 +249,83 @@
             border: 1px solid #e94560;
         }
         
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .status.loading {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #ffc107;
+        }
+        
+        .status.ready {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+        
+        .status.error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+        
+        .camera-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .camera-btn.start {
+            background: #28a745;
+            color: white;
+        }
+        
+        .camera-btn.stop {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .camera-btn:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+        
+        .detection-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .detection-info h4 {
+            margin: 0 0 10px 0;
+            color: #4ecdc4;
+        }
+        
+        .hand-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
         .all-stances {
             margin-top: 30px;
             width: 100%;
-            max-width: 900px;
+            max-width: 1200px;
         }
         
         .all-stances h2 {
@@ -201,6 +349,7 @@
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             transition: transform 0.2s;
+            cursor: pointer;
         }
         
         .stance-preview:hover {
@@ -216,13 +365,78 @@
             font-size: 12px;
             color: #ccc;
         }
+
+        .instructions {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        
+        .instructions h4 {
+            margin: 0 0 10px 0;
+            color: #ffc107;
+        }
+        
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+            color: #ccc;
+        }
     </style>
 </head>
 <body>
     <h1>🥊 Boxing Game</h1>
-    <p class="subtitle">Camera-Based Motion Detection • Placeholder Graphics Demo</p>
+    <p class="subtitle">Camera-Based Motion Detection with MediaPipe</p>
     
     <div class="main-container">
+        <div class="camera-area">
+            <h2>📷 Camera Feed</h2>
+            <div class="camera-container">
+                <video id="webcam" autoplay playsinline></video>
+                <canvas id="cameraCanvas" width="320" height="240"></canvas>
+                <div class="grid-overlay">
+                    <div class="grid-line-v" style="left: 50%;"></div>
+                    <div class="grid-line-h" style="top: 33.33%;"></div>
+                    <div class="grid-line-h" style="top: 66.66%;"></div>
+                </div>
+            </div>
+            
+            <div id="status" class="status loading">Loading MediaPipe...</div>
+            
+            <button id="cameraBtn" class="camera-btn start" onclick="toggleCamera()">
+                📷 Start Camera
+            </button>
+            
+            <div class="detection-info">
+                <h4>Hand Detection</h4>
+                <div class="hand-info">
+                    <span>Left Hand:</span>
+                    <span id="leftHandPos">Not detected</span>
+                </div>
+                <div class="hand-info">
+                    <span>Right Hand:</span>
+                    <span id="rightHandPos">Not detected</span>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h4>How to Play</h4>
+                <ul>
+                    <li>Stand back so camera can see your hands</li>
+                    <li>Raise both fists for <strong>Guard</strong> position</li>
+                    <li>Punch forward with one hand for <strong>Jabs</strong></li>
+                    <li>Swing to the side for <strong>Hooks</strong></li>
+                    <li>Lower your hands and crouch for <strong>Ducks</strong></li>
+                </ul>
+            </div>
+        </div>
+        
         <div class="game-area">
             <h2>Boxing Ring</h2>
             <canvas id="gameCanvas" width="400" height="500"></canvas>
@@ -231,30 +445,30 @@
         
         <div class="controls">
             <h2>2x3 Detection Grid</h2>
-            <p style="font-size: 12px; color: #aaa;">Click cells to simulate glove positions</p>
+            <p style="font-size: 12px; color: #aaa;">Live detection shown below</p>
             
             <div class="grid-display">
-                <div class="grid-cell" data-row="0" data-col="0">Top<br>Left</div>
-                <div class="grid-cell" data-row="0" data-col="1">Top<br>Right</div>
-                <div class="grid-cell" data-row="1" data-col="0">Mid<br>Left</div>
-                <div class="grid-cell" data-row="1" data-col="1">Mid<br>Right</div>
-                <div class="grid-cell" data-row="2" data-col="0">Bottom<br>Left</div>
-                <div class="grid-cell" data-row="2" data-col="1">Bottom<br>Right</div>
+                <div class="grid-cell" data-row="0" data-col="0" id="cell-0-0">Top<br>Left</div>
+                <div class="grid-cell" data-row="0" data-col="1" id="cell-0-1">Top<br>Right</div>
+                <div class="grid-cell" data-row="1" data-col="0" id="cell-1-0">Mid<br>Left</div>
+                <div class="grid-cell" data-row="1" data-col="1" id="cell-1-1">Mid<br>Right</div>
+                <div class="grid-cell" data-row="2" data-col="0" id="cell-2-0">Bottom<br>Left</div>
+                <div class="grid-cell" data-row="2" data-col="1" id="cell-2-1">Bottom<br>Right</div>
             </div>
             
             <div class="legend">
                 <h4>Grid Legend</h4>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #e94560;"></div>
-                    <span>Left Glove</span>
+                    <span>Left Hand</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #4ecdc4;"></div>
-                    <span>Right Glove</span>
+                    <span>Right Hand</span>
                 </div>
             </div>
             
-            <h3 style="margin-bottom: 10px;">Quick Stances</h3>
+            <h3 style="margin-bottom: 10px;">Manual Controls</h3>
             <div class="stance-buttons">
                 <button class="stance-btn idle" onclick="setStance('idle')">Idle</button>
                 <button class="stance-btn guard" onclick="setStance('guard')">Guard Up</button>
@@ -275,8 +489,23 @@
     </div>
 
     <script>
+        // Canvas setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const cameraCtx = cameraCanvas.getContext('2d');
+        const video = document.getElementById('webcam');
+        const statusEl = document.getElementById('status');
+        const cameraBtnEl = document.getElementById('cameraBtn');
+        
+        // State
+        let cameraRunning = false;
+        let hands = null;
+        let camera = null;
+        
+        // Detected hand positions (grid coordinates)
+        let leftHandGrid = null;
+        let rightHandGrid = null;
         
         // Boxer configuration
         const boxer = {
@@ -302,8 +531,7 @@
             tankHighlight: '#2d2d44'
         };
         
-        // Stance definitions - positions for left and right gloves
-        // Coordinates are relative to boxer center, from behind view
+        // Stance definitions
         const stances = {
             idle: {
                 name: 'Idle',
@@ -371,9 +599,309 @@
         };
         
         let currentStance = 'idle';
-        let animationProgress = 1;
-        let previousStance = null;
-        let targetStance = null;
+        
+        // Initialize MediaPipe Hands
+        async function initMediaPipe() {
+            try {
+                hands = new Hands({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                    }
+                });
+                
+                hands.setOptions({
+                    maxNumHands: 2,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+                
+                hands.onResults(onHandResults);
+                
+                statusEl.textContent = 'MediaPipe loaded! Click "Start Camera" to begin.';
+                statusEl.className = 'status ready';
+                
+            } catch (error) {
+                console.error('Error initializing MediaPipe:', error);
+                statusEl.textContent = 'Error loading MediaPipe: ' + error.message;
+                statusEl.className = 'status error';
+            }
+        }
+        
+        // Handle hand detection results
+        function onHandResults(results) {
+            // Clear camera canvas
+            cameraCtx.clearRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+            
+            // Draw camera feed
+            cameraCtx.drawImage(results.image, 0, 0, cameraCanvas.width, cameraCanvas.height);
+            
+            // Reset grid highlights
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.classList.remove('active-left', 'active-right', 'active-both');
+            });
+            
+            leftHandGrid = null;
+            rightHandGrid = null;
+            
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const handedness = results.multiHandedness[i];
+                    
+                    // MediaPipe reports handedness from camera's perspective (mirrored)
+                    // So "Left" from MediaPipe is actually the user's RIGHT hand
+                    const isLeftHand = handedness.label === 'Right'; // Inverted due to mirror
+                    
+                    // Draw hand landmarks
+                    drawConnectors(cameraCtx, landmarks, HAND_CONNECTIONS, {
+                        color: isLeftHand ? '#e94560' : '#4ecdc4',
+                        lineWidth: 2
+                    });
+                    drawLandmarks(cameraCtx, landmarks, {
+                        color: isLeftHand ? '#ff6b8a' : '#7eddd6',
+                        lineWidth: 1,
+                        radius: 3
+                    });
+                    
+                    // Get wrist position (landmark 0) for grid mapping
+                    // Using index finger MCP (landmark 5) for better "glove" position
+                    const wrist = landmarks[0];
+                    const indexMcp = landmarks[5];
+                    
+                    // Use average of wrist and index MCP for glove position
+                    const gloveX = (wrist.x + indexMcp.x) / 2;
+                    const gloveY = (wrist.y + indexMcp.y) / 2;
+                    
+                    // Map to grid (2 columns, 3 rows)
+                    const col = gloveX < 0.5 ? 0 : 1;
+                    const row = gloveY < 0.33 ? 0 : (gloveY < 0.66 ? 1 : 2);
+                    
+                    const gridPos = { row, col };
+                    
+                    if (isLeftHand) {
+                        leftHandGrid = gridPos;
+                        document.getElementById('leftHandPos').textContent = 
+                            `Row ${row}, Col ${col}`;
+                    } else {
+                        rightHandGrid = gridPos;
+                        document.getElementById('rightHandPos').textContent = 
+                            `Row ${row}, Col ${col}`;
+                    }
+                    
+                    // Highlight grid cell
+                    const cellId = `cell-${row}-${col}`;
+                    const cell = document.getElementById(cellId);
+                    if (cell) {
+                        if (cell.classList.contains('active-left') || cell.classList.contains('active-right')) {
+                            cell.classList.remove('active-left', 'active-right');
+                            cell.classList.add('active-both');
+                        } else {
+                            cell.classList.add(isLeftHand ? 'active-left' : 'active-right');
+                        }
+                    }
+                }
+            }
+            
+            // Update hand info display if no hands detected
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                document.getElementById('leftHandPos').textContent = 'Not detected';
+                document.getElementById('rightHandPos').textContent = 'Not detected';
+            } else if (results.multiHandLandmarks.length === 1) {
+                const handedness = results.multiHandedness[0];
+                const isLeftHand = handedness.label === 'Right';
+                if (isLeftHand) {
+                    document.getElementById('rightHandPos').textContent = 'Not detected';
+                } else {
+                    document.getElementById('leftHandPos').textContent = 'Not detected';
+                }
+            }
+            
+            // Detect stance from grid positions
+            detectStanceFromGrid();
+        }
+        
+        // Toggle camera on/off
+        async function toggleCamera() {
+            if (cameraRunning) {
+                stopCamera();
+            } else {
+                await startCamera();
+            }
+        }
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                statusEl.textContent = 'Starting camera...';
+                statusEl.className = 'status loading';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 }
+                });
+                
+                video.srcObject = stream;
+                
+                await new Promise((resolve) => {
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        resolve();
+                    };
+                });
+                
+                camera = new Camera(video, {
+                    onFrame: async () => {
+                        if (hands) {
+                            await hands.send({ image: video });
+                        }
+                    },
+                    width: 640,
+                    height: 480
+                });
+                
+                await camera.start();
+                
+                cameraRunning = true;
+                cameraBtnEl.textContent = '⏹️ Stop Camera';
+                cameraBtnEl.className = 'camera-btn stop';
+                statusEl.textContent = 'Camera running - show your hands!';
+                statusEl.className = 'status ready';
+                
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                statusEl.textContent = 'Camera error: ' + error.message;
+                statusEl.className = 'status error';
+            }
+        }
+        
+        // Stop camera
+        function stopCamera() {
+            if (camera) {
+                camera.stop();
+            }
+            
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            cameraRunning = false;
+            cameraBtnEl.textContent = '📷 Start Camera';
+            cameraBtnEl.className = 'camera-btn start';
+            statusEl.textContent = 'Camera stopped. Click to restart.';
+            statusEl.className = 'status ready';
+            
+            // Clear camera canvas
+            cameraCtx.clearRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+            
+            // Reset grid
+            document.querySelectorAll('.grid-cell').forEach(cell => {
+                cell.classList.remove('active-left', 'active-right', 'active-both');
+            });
+            
+            document.getElementById('leftHandPos').textContent = 'Not detected';
+            document.getElementById('rightHandPos').textContent = 'Not detected';
+        }
+        
+        // Map grid positions to stances
+        function detectStanceFromGrid() {
+            const lg = leftHandGrid;
+            const rg = rightHandGrid;
+            
+            // No hands detected
+            if (!lg && !rg) {
+                setStance('idle');
+                return;
+            }
+            
+            // Both hands detected
+            if (lg && rg) {
+                // Both hands top row = Guard
+                if (lg.row === 0 && rg.row === 0) {
+                    setStance('guard');
+                    return;
+                }
+                
+                // Both hands bottom = ducking (check which side dominant)
+                if (lg.row === 2 && rg.row === 2) {
+                    if (lg.col === 0 && rg.col === 0) {
+                        setStance('duckLeft');
+                    } else if (lg.col === 1 && rg.col === 1) {
+                        setStance('duckRight');
+                    } else {
+                        setStance('duckLeft'); // Default duck
+                    }
+                    return;
+                }
+                
+                // Both hands middle = body block
+                if (lg.row === 1 && rg.row === 1) {
+                    setStance('blockBody');
+                    return;
+                }
+                
+                // Left hand extended (top right while right hand stays back)
+                if (lg.row === 0 && lg.col === 1 && rg.row >= 0) {
+                    setStance('jabLeft');
+                    return;
+                }
+                
+                // Right hand extended (top left while left hand stays back)
+                if (rg.row === 0 && rg.col === 0 && lg.row >= 0) {
+                    setStance('jabRight');
+                    return;
+                }
+                
+                // Left hook (left hand middle-left, wide)
+                if (lg.row === 1 && lg.col === 0) {
+                    setStance('hookLeft');
+                    return;
+                }
+                
+                // Right hook (right hand middle-right, wide)
+                if (rg.row === 1 && rg.col === 1) {
+                    setStance('hookRight');
+                    return;
+                }
+            }
+            
+            // Single hand detection
+            if (lg && !rg) {
+                if (lg.row === 0) {
+                    if (lg.col === 1) {
+                        setStance('jabLeft');
+                    } else {
+                        setStance('guard'); // Single hand up
+                    }
+                } else if (lg.row === 1 && lg.col === 0) {
+                    setStance('hookLeft');
+                } else if (lg.row === 2) {
+                    setStance('duckLeft');
+                } else {
+                    setStance('idle');
+                }
+                return;
+            }
+            
+            if (rg && !lg) {
+                if (rg.row === 0) {
+                    if (rg.col === 0) {
+                        setStance('jabRight');
+                    } else {
+                        setStance('guard'); // Single hand up
+                    }
+                } else if (rg.row === 1 && rg.col === 1) {
+                    setStance('hookRight');
+                } else if (rg.row === 2) {
+                    setStance('duckRight');
+                } else {
+                    setStance('idle');
+                }
+                return;
+            }
+            
+            setStance('idle');
+        }
         
         // Draw the boxing ring floor
         function drawRing(ctx, width, height) {
@@ -553,7 +1081,7 @@
             ctx.stroke();
             
             // Glove
-            const gloveScale = 1 + glovePos.z * 0.01; // Larger when closer (punching)
+            const gloveScale = 1 + glovePos.z * 0.01;
             ctx.fillStyle = gloveColor;
             ctx.beginPath();
             ctx.ellipse(glovePos.x, glovePos.y, 22 * gloveScale, 18 * gloveScale, 
@@ -604,90 +1132,9 @@
         
         // Set stance
         function setStance(stance) {
-            if (stances[stance]) {
+            if (stances[stance] && currentStance !== stance) {
                 currentStance = stance;
                 document.getElementById('stanceLabel').textContent = stances[stance].name;
-            }
-        }
-        
-        // Grid interaction
-        let leftGloveCell = null;
-        let rightGloveCell = null;
-        
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                
-                // Toggle left glove with left click, right with shift+click
-                if (e.shiftKey) {
-                    if (cell.classList.contains('active-right')) {
-                        cell.classList.remove('active-right');
-                        rightGloveCell = null;
-                    } else {
-                        document.querySelectorAll('.grid-cell.active-right').forEach(c => c.classList.remove('active-right'));
-                        cell.classList.add('active-right');
-                        rightGloveCell = { row, col };
-                    }
-                } else {
-                    if (cell.classList.contains('active-left')) {
-                        cell.classList.remove('active-left');
-                        leftGloveCell = null;
-                    } else {
-                        document.querySelectorAll('.grid-cell.active-left').forEach(c => c.classList.remove('active-left'));
-                        cell.classList.add('active-left');
-                        leftGloveCell = { row, col };
-                    }
-                }
-                
-                detectStanceFromGrid();
-            });
-        });
-        
-        // Map grid positions to stances
-        function detectStanceFromGrid() {
-            if (!leftGloveCell && !rightGloveCell) {
-                setStance('idle');
-                return;
-            }
-            
-            const lg = leftGloveCell;
-            const rg = rightGloveCell;
-            
-            // Both gloves up (guard)
-            if (lg && rg && lg.row === 0 && rg.row === 0) {
-                setStance('guard');
-            }
-            // Left jab (left glove top right, right glove top)
-            else if (lg && lg.row === 0 && lg.col === 1 && (!rg || rg.row === 0)) {
-                setStance('jabLeft');
-            }
-            // Right jab (right glove top left, left glove top)
-            else if (rg && rg.row === 0 && rg.col === 0 && (!lg || lg.row === 0)) {
-                setStance('jabRight');
-            }
-            // Left hook (left glove middle left)
-            else if (lg && lg.row === 1 && lg.col === 0) {
-                setStance('hookLeft');
-            }
-            // Right hook (right glove middle right)
-            else if (rg && rg.row === 1 && rg.col === 1) {
-                setStance('hookRight');
-            }
-            // Duck left (both gloves bottom left or left glove bottom)
-            else if (lg && lg.row === 2 && lg.col === 0) {
-                setStance('duckLeft');
-            }
-            // Duck right (both gloves bottom right or right glove bottom)
-            else if (rg && rg.row === 2 && rg.col === 1) {
-                setStance('duckRight');
-            }
-            // Block body (gloves in middle)
-            else if ((lg && lg.row === 1) || (rg && rg.row === 1)) {
-                setStance('blockBody');
-            }
-            else {
-                setStance('idle');
             }
         }
         
@@ -729,10 +1176,11 @@
         }
         
         // Initialize
+        initMediaPipe();
         createStanceGallery();
         render();
         
-        // Keyboard shortcuts
+        // Keyboard shortcuts (for testing without camera)
         document.addEventListener('keydown', (e) => {
             switch(e.key.toLowerCase()) {
                 case '1': setStance('idle'); break;
