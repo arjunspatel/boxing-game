@@ -548,11 +548,13 @@ const BoxingGame3D = (function() {
         if (!leftHandData && !leftPunchAnimation.active) {
             leftGlove.position.y = DEFAULT_POSITIONS.left.y + Math.sin(time * 2) * 0.02;
             leftGlove.position.x = DEFAULT_POSITIONS.left.x + Math.sin(time * 1.5) * 0.01;
+            leftGlove.position.z = DEFAULT_POSITIONS.left.z + Math.sin(time * 1.8) * 0.01;
         }
         
         if (!rightHandData && !rightPunchAnimation.active) {
             rightGlove.position.y = DEFAULT_POSITIONS.right.y + Math.sin(time * 2 + 0.5) * 0.02;
             rightGlove.position.x = DEFAULT_POSITIONS.right.x + Math.sin(time * 1.5 + 0.5) * 0.01;
+            rightGlove.position.z = DEFAULT_POSITIONS.right.z + Math.sin(time * 1.8 + 0.5) * 0.01;
         }
     }
     
