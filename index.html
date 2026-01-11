@@ -66,6 +66,194 @@
                 <div id="punchLogList"></div>
             </div>
         </div>
+        
+        <!-- Debug Panel - Punch Detection Ingredients -->
+        <div class="debug-panel">
+            <h2>🔬 Punch Detection Debug</h2>
+            <p class="debug-subtitle">All ingredients that go into detecting a punch</p>
+            
+            <!-- Left Hand Debug -->
+            <div class="hand-debug-section">
+                <h3 class="left-title">Left Hand</h3>
+                <div class="debug-grid" id="leftDebugGrid">
+                    <!-- Raw Palm Z -->
+                    <div class="debug-item">
+                        <label>Raw Palm Z</label>
+                        <div class="debug-meter">
+                            <div class="meter-track">
+                                <div class="meter-fill" id="leftPalmZ"></div>
+                                <div class="meter-center"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="leftPalmZVal">0.000</span>
+                    </div>
+                    
+                    <!-- Hand Scale -->
+                    <div class="debug-item">
+                        <label>Hand Scale</label>
+                        <div class="debug-meter">
+                            <div class="meter-track scale-meter">
+                                <div class="meter-fill scale" id="leftScale"></div>
+                                <div class="meter-reference" id="leftScaleRef"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="leftScaleVal">0.150</span>
+                    </div>
+                    
+                    <!-- Combined Depth -->
+                    <div class="debug-item">
+                        <label>Combined Depth</label>
+                        <div class="debug-meter">
+                            <div class="meter-track">
+                                <div class="meter-fill" id="leftDepth"></div>
+                                <div class="meter-center"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="leftDepthVal">0.000</span>
+                    </div>
+                    
+                    <!-- Velocity (KEY for punch detection!) -->
+                    <div class="debug-item velocity-item">
+                        <label>⚡ VELOCITY</label>
+                        <div class="debug-meter">
+                            <div class="meter-track velocity-track">
+                                <div class="meter-fill velocity" id="leftVelocity"></div>
+                                <div class="meter-center"></div>
+                                <div class="velocity-threshold-line" id="leftThreshold"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="leftVelocityVal">0.0000</span>
+                    </div>
+                    
+                    <!-- Fist Detection -->
+                    <div class="debug-item">
+                        <label>Fist Detected</label>
+                        <div class="debug-indicator" id="leftFist">NO</div>
+                    </div>
+                    
+                    <!-- Punch State -->
+                    <div class="debug-item">
+                        <label>Punch State</label>
+                        <div class="debug-indicator punch-state" id="leftPunch">IDLE</div>
+                    </div>
+                    
+                    <!-- Punch Power -->
+                    <div class="debug-item power-item">
+                        <label>Punch Power</label>
+                        <div class="power-bar">
+                            <div class="power-fill" id="leftPower"></div>
+                        </div>
+                        <span class="debug-value" id="leftPowerVal">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Velocity Graph -->
+                <div class="velocity-graph-container">
+                    <label>Velocity History</label>
+                    <canvas id="leftVelocityGraph" width="300" height="60"></canvas>
+                </div>
+            </div>
+            
+            <!-- Right Hand Debug -->
+            <div class="hand-debug-section">
+                <h3 class="right-title">Right Hand</h3>
+                <div class="debug-grid" id="rightDebugGrid">
+                    <!-- Raw Palm Z -->
+                    <div class="debug-item">
+                        <label>Raw Palm Z</label>
+                        <div class="debug-meter">
+                            <div class="meter-track">
+                                <div class="meter-fill" id="rightPalmZ"></div>
+                                <div class="meter-center"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="rightPalmZVal">0.000</span>
+                    </div>
+                    
+                    <!-- Hand Scale -->
+                    <div class="debug-item">
+                        <label>Hand Scale</label>
+                        <div class="debug-meter">
+                            <div class="meter-track scale-meter">
+                                <div class="meter-fill scale" id="rightScale"></div>
+                                <div class="meter-reference" id="rightScaleRef"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="rightScaleVal">0.150</span>
+                    </div>
+                    
+                    <!-- Combined Depth -->
+                    <div class="debug-item">
+                        <label>Combined Depth</label>
+                        <div class="debug-meter">
+                            <div class="meter-track">
+                                <div class="meter-fill" id="rightDepth"></div>
+                                <div class="meter-center"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="rightDepthVal">0.000</span>
+                    </div>
+                    
+                    <!-- Velocity (KEY for punch detection!) -->
+                    <div class="debug-item velocity-item">
+                        <label>⚡ VELOCITY</label>
+                        <div class="debug-meter">
+                            <div class="meter-track velocity-track">
+                                <div class="meter-fill velocity" id="rightVelocity"></div>
+                                <div class="meter-center"></div>
+                                <div class="velocity-threshold-line" id="rightThreshold"></div>
+                            </div>
+                        </div>
+                        <span class="debug-value" id="rightVelocityVal">0.0000</span>
+                    </div>
+                    
+                    <!-- Fist Detection -->
+                    <div class="debug-item">
+                        <label>Fist Detected</label>
+                        <div class="debug-indicator" id="rightFist">NO</div>
+                    </div>
+                    
+                    <!-- Punch State -->
+                    <div class="debug-item">
+                        <label>Punch State</label>
+                        <div class="debug-indicator punch-state" id="rightPunch">IDLE</div>
+                    </div>
+                    
+                    <!-- Punch Power -->
+                    <div class="debug-item power-item">
+                        <label>Punch Power</label>
+                        <div class="power-bar">
+                            <div class="power-fill" id="rightPower"></div>
+                        </div>
+                        <span class="debug-value" id="rightPowerVal">0%</span>
+                    </div>
+                </div>
+                
+                <!-- Velocity Graph -->
+                <div class="velocity-graph-container">
+                    <label>Velocity History</label>
+                    <canvas id="rightVelocityGraph" width="300" height="60"></canvas>
+                </div>
+            </div>
+            
+            <!-- Threshold Info -->
+            <div class="threshold-info">
+                <h4>Detection Thresholds</h4>
+                <div class="threshold-row">
+                    <span class="threshold-label">Velocity Threshold:</span>
+                    <span class="threshold-value" id="velocityThresholdVal">-0.006</span>
+                    <span class="threshold-desc">(velocity must be below this to trigger punch)</span>
+                </div>
+                <div class="threshold-row">
+                    <span class="threshold-label">Punch Cooldown:</span>
+                    <span class="threshold-value">80ms</span>
+                </div>
+                <div class="threshold-row">
+                    <span class="threshold-label">Depth Smoothing:</span>
+                    <span class="threshold-value">0.7</span>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Instructions -->
@@ -85,6 +273,19 @@
             <li><span class="legend-item green">Green bar/arrow</span> = Moving forward (toward camera/punching)</li>
             <li><span class="legend-item orange">Orange bar/arrow</span> = Moving backward (away from camera)</li>
             <li><span class="legend-item yellow">Yellow ring</span> = Punch detected!</li>
+        </ul>
+        
+        <h4>🔬 Debug Panel - Punch Detection Ingredients</h4>
+        <p>The debug panel shows <strong>all the data</strong> that goes into detecting a punch:</p>
+        <ul>
+            <li><strong>Raw Palm Z:</strong> The raw depth value from MediaPipe's z-coordinates (negative = closer to camera)</li>
+            <li><strong>Hand Scale:</strong> Distance between wrist and middle finger MCP. Larger = closer to camera. White line shows reference size.</li>
+            <li><strong>Combined Depth:</strong> Weighted combination of Palm Z (60%) and Scale depth (40%), amplified 1.5x</li>
+            <li><strong>⚡ VELOCITY:</strong> The rate of change in depth - <em>this is the key trigger for punch detection!</em> When velocity crosses the red threshold line (going left/negative), a punch is registered.</li>
+            <li><strong>Fist Detected:</strong> Whether 3+ fingers are curled (fingertips closer to wrist than knuckles)</li>
+            <li><strong>Punch State:</strong> IDLE or PUNCHING - shows when the system has registered a punch</li>
+            <li><strong>Punch Power:</strong> 0-100% based on how fast you punched (higher velocity = more power)</li>
+            <li><strong>Velocity History Graph:</strong> Real-time graph showing velocity over time. Yellow highlights show when threshold was crossed.</li>
         </ul>
         
         <h4>Using Mixamo Models</h4>

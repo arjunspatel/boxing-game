@@ -387,6 +387,272 @@ const CameraDetection = (function() {
                 rightDepthEl.textContent = '';
             }
         }
+        
+        // Update detailed debug panel
+        updateDebugPanel();
+    }
+    
+    // Update the comprehensive debug panel
+    function updateDebugPanel() {
+        if (typeof DepthSensor === 'undefined') return;
+        
+        const debugData = DepthSensor.getDebugData();
+        
+        // Update left hand debug
+        updateHandDebug('left', debugData.left, debugData.thresholds);
+        
+        // Update right hand debug  
+        updateHandDebug('right', debugData.right, debugData.thresholds);
+        
+        // Update threshold display
+        const thresholdEl = document.getElementById('velocityThresholdVal');
+        if (thresholdEl && debugData.thresholds) {
+            thresholdEl.textContent = (-debugData.thresholds.velocityThreshold).toFixed(4);
+        }
+    }
+    
+    // Update individual hand debug display
+    function updateHandDebug(hand, data, thresholds) {
+        if (!data) {
+            // Reset display when hand not detected
+            resetHandDebug(hand);
+            return;
+        }
+        
+        const prefix = hand;
+        
+        // Raw Palm Z (centered meter, negative = forward)
+        updateCenteredMeter(`${prefix}PalmZ`, data.rawPalmZ, -0.3, 0.3);
+        updateValue(`${prefix}PalmZVal`, data.rawPalmZ, 3);
+        
+        // Hand Scale (linear meter)
+        const refScale = thresholds ? thresholds.referenceHandSize : 0.15;
+        updateScaleMeter(`${prefix}Scale`, data.scale, refScale);
+        updateValue(`${prefix}ScaleVal`, data.scale, 3);
+        
+        // Combined Depth (centered meter)
+        updateCenteredMeter(`${prefix}Depth`, data.depth, -0.5, 0.5);
+        updateValue(`${prefix}DepthVal`, data.depth, 3);
+        
+        // Velocity (centered meter with threshold indicator)
+        const velThreshold = thresholds ? thresholds.velocityThreshold : 0.006;
+        updateVelocityMeter(`${prefix}Velocity`, data.velocity, velThreshold);
+        updateValue(`${prefix}VelocityVal`, data.velocity, 4);
+        
+        // Update threshold line position
+        updateThresholdLine(`${prefix}Threshold`, velThreshold);
+        
+        // Fist indicator
+        const fistEl = document.getElementById(`${prefix}Fist`);
+        if (fistEl) {
+            fistEl.textContent = data.isFist ? 'YES' : 'NO';
+            fistEl.className = 'debug-indicator ' + (data.isFist ? 'active' : '');
+        }
+        
+        // Punch state
+        const punchEl = document.getElementById(`${prefix}Punch`);
+        if (punchEl) {
+            punchEl.textContent = data.isPunching ? 'PUNCHING!' : 'IDLE';
+            punchEl.className = 'debug-indicator punch-state ' + (data.isPunching ? 'punching' : '');
+        }
+        
+        // Power bar
+        const powerFill = document.getElementById(`${prefix}Power`);
+        const powerVal = document.getElementById(`${prefix}PowerVal`);
+        if (powerFill) {
+            const powerPercent = Math.round(data.power * 100);
+            powerFill.style.width = powerPercent + '%';
+        }
+        if (powerVal) {
+            powerVal.textContent = Math.round(data.power * 100) + '%';
+        }
+        
+        // Velocity graph
+        drawVelocityGraph(`${prefix}VelocityGraph`, data.velocityHistory, velThreshold);
+    }
+    
+    // Reset hand debug display
+    function resetHandDebug(hand) {
+        const prefix = hand;
+        const elements = ['PalmZ', 'Scale', 'Depth', 'Velocity', 'Power'];
+        
+        elements.forEach(el => {
+            const fill = document.getElementById(`${prefix}${el}`);
+            if (fill) fill.style.width = '50%';
+            
+            const val = document.getElementById(`${prefix}${el}Val`);
+            if (val) val.textContent = el === 'Power' ? '0%' : '0.000';
+        });
+        
+        const fistEl = document.getElementById(`${prefix}Fist`);
+        if (fistEl) {
+            fistEl.textContent = 'N/A';
+            fistEl.className = 'debug-indicator';
+        }
+        
+        const punchEl = document.getElementById(`${prefix}Punch`);
+        if (punchEl) {
+            punchEl.textContent = 'NO HAND';
+            punchEl.className = 'debug-indicator punch-state';
+        }
+    }
+    
+    // Update centered meter (for values that can be positive or negative)
+    function updateCenteredMeter(id, value, min, max) {
+        const fill = document.getElementById(id);
+        if (!fill) return;
+        
+        // Normalize value to 0-100 range, with 50% being center (0)
+        const range = max - min;
+        const normalized = ((value - min) / range) * 100;
+        const clamped = Math.max(0, Math.min(100, normalized));
+        
+        // For centered meters, we position from the center
+        if (value < 0) {
+            // Fill from position to center (50%)
+            fill.style.left = clamped + '%';
+            fill.style.width = (50 - clamped) + '%';
+            fill.style.background = 'linear-gradient(90deg, #00ff00, #00cc00)';
+        } else {
+            // Fill from center to position
+            fill.style.left = '50%';
+            fill.style.width = (clamped - 50) + '%';
+            fill.style.background = 'linear-gradient(90deg, #ff6600, #ff9900)';
+        }
+    }
+    
+    // Update scale meter
+    function updateScaleMeter(id, value, reference) {
+        const fill = document.getElementById(id);
+        const refEl = document.getElementById(id + 'Ref');
+        if (!fill) return;
+        
+        // Scale from 0 to 0.3
+        const percent = (value / 0.3) * 100;
+        fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+        fill.style.left = '0';
+        fill.style.background = value > reference ? '#00ff00' : '#ff6600';
+        
+        // Reference line
+        if (refEl) {
+            const refPercent = (reference / 0.3) * 100;
+            refEl.style.left = refPercent + '%';
+        }
+    }
+    
+    // Update velocity meter with special coloring
+    function updateVelocityMeter(id, value, threshold) {
+        const fill = document.getElementById(id);
+        if (!fill) return;
+        
+        // Velocity range: -0.05 to 0.05
+        const min = -0.05;
+        const max = 0.05;
+        const range = max - min;
+        const normalized = ((value - min) / range) * 100;
+        const clamped = Math.max(0, Math.min(100, normalized));
+        
+        // Check if crossing threshold (punch condition)
+        const isPunchVelocity = value < -threshold;
+        
+        if (value < 0) {
+            fill.style.left = clamped + '%';
+            fill.style.width = (50 - clamped) + '%';
+            fill.style.background = isPunchVelocity ? 
+                'linear-gradient(90deg, #ffff00, #ff0)' : 
+                'linear-gradient(90deg, #00ff00, #00cc00)';
+        } else {
+            fill.style.left = '50%';
+            fill.style.width = (clamped - 50) + '%';
+            fill.style.background = 'linear-gradient(90deg, #ff6600, #ff9900)';
+        }
+    }
+    
+    // Update threshold line position
+    function updateThresholdLine(id, threshold) {
+        const line = document.getElementById(id);
+        if (!line) return;
+        
+        // Position the threshold line
+        const min = -0.05;
+        const max = 0.05;
+        const range = max - min;
+        const position = ((-threshold - min) / range) * 100;
+        line.style.left = position + '%';
+    }
+    
+    // Update text value display
+    function updateValue(id, value, decimals) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = value.toFixed(decimals);
+        }
+    }
+    
+    // Draw velocity history graph
+    function drawVelocityGraph(canvasId, history, threshold) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || !history || history.length === 0) return;
+        
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Clear canvas
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+        
+        // Draw center line (velocity = 0)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+        
+        // Draw threshold line
+        const thresholdY = height / 2 + (threshold / 0.05) * (height / 2);
+        ctx.strokeStyle = '#ff0000';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0, thresholdY);
+        ctx.lineTo(width, thresholdY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // Draw velocity history
+        if (history.length < 2) return;
+        
+        ctx.strokeStyle = '#4ecdc4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        const stepX = width / (50 - 1); // 50 is max history length
+        const startIdx = Math.max(0, history.length - 50);
+        
+        for (let i = 0; i < history.length; i++) {
+            const x = (i - startIdx) * stepX;
+            // Clamp velocity to -0.05 to 0.05 range
+            const vel = Math.max(-0.05, Math.min(0.05, history[i]));
+            const y = height / 2 - (vel / 0.05) * (height / 2);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+        
+        // Highlight when crossing threshold
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+        for (let i = 0; i < history.length; i++) {
+            if (history[i] < -threshold) {
+                const x = (i - startIdx) * stepX;
+                ctx.fillRect(x - 2, 0, 4, height);
+            }
+        }
     }
     
     // Detect stance from grid positions - map fine grid to logical zones

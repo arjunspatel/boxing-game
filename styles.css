@@ -421,7 +421,257 @@ h1 {
     color: #ffff00;
 }
 
+/* Debug Panel Styles */
+.debug-panel {
+    background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 380px;
+}
+
+.debug-panel h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: #ff9900;
+}
+
+.debug-subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 12px;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.hand-debug-section {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.hand-debug-section h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hand-debug-section h3.left-title {
+    color: #e94560;
+}
+
+.hand-debug-section h3.right-title {
+    color: #4ecdc4;
+}
+
+.debug-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.debug-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.debug-item label {
+    font-size: 10px;
+    color: #aaa;
+    width: 85px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.debug-item.velocity-item label {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.debug-meter {
+    flex: 1;
+    height: 14px;
+}
+
+.meter-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.meter-fill {
+    position: absolute;
+    height: 100%;
+    border-radius: 4px;
+    transition: all 0.1s ease-out;
+}
+
+.meter-center {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateX(-50%);
+}
+
+.meter-reference {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #ffffff;
+    opacity: 0.8;
+}
+
+.velocity-track {
+    border: 1px solid #ffff00;
+}
+
+.velocity-threshold-line {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #ff0000;
+    box-shadow: 0 0 5px #ff0000;
+}
+
+.debug-value {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 10px;
+    color: #fff;
+    width: 50px;
+    text-align: right;
+}
+
+.debug-indicator {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    background: rgba(100, 100, 100, 0.5);
+    color: #888;
+}
+
+.debug-indicator.active {
+    background: rgba(0, 255, 0, 0.3);
+    color: #00ff00;
+}
+
+.debug-indicator.punch-state {
+    background: rgba(100, 100, 100, 0.5);
+    color: #888;
+}
+
+.debug-indicator.punch-state.punching {
+    background: rgba(255, 255, 0, 0.4);
+    color: #ffff00;
+    animation: punch-flash 0.2s ease-in-out infinite;
+}
+
+@keyframes punch-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.power-item {
+    margin-top: 4px;
+}
+
+.power-bar {
+    flex: 1;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.power-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ffff00);
+    border-radius: 4px;
+    transition: width 0.15s ease-out;
+    width: 0%;
+}
+
+.velocity-graph-container {
+    margin-top: 10px;
+}
+
+.velocity-graph-container label {
+    display: block;
+    font-size: 10px;
+    color: #888;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.velocity-graph-container canvas {
+    width: 100%;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.threshold-info {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 11px;
+}
+
+.threshold-info h4 {
+    margin: 0 0 8px 0;
+    color: #ff9900;
+    font-size: 12px;
+}
+
+.threshold-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+    flex-wrap: wrap;
+}
+
+.threshold-label {
+    color: #aaa;
+    width: 120px;
+}
+
+.threshold-value {
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: #ff9900;
+    font-weight: bold;
+}
+
+.threshold-desc {
+    font-size: 9px;
+    color: #666;
+}
+
 /* Responsive design */
+@media (max-width: 1200px) {
+    .game-container {
+        flex-wrap: wrap;
+    }
+    
+    .debug-panel {
+        order: 3;
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
 @media (max-width: 900px) {
     .game-container {
         flex-direction: column;
@@ -435,6 +685,10 @@ h1 {
     }
     
     .camera-section {
+        max-width: 100%;
+    }
+    
+    .debug-panel {
         max-width: 100%;
     }
 }
