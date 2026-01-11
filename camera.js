@@ -1,22 +1,22 @@
-// Camera Detection using MediaPipe Hands
+// Camera Detection using MediaPipe Hands with Depth Sensing
 
 const CameraDetection = (function() {
     let video, canvasOverlay, ctxOverlay;
     let hands = null;
-    let camera = null;
     let isRunning = false;
     let onStanceDetected = null;
+    let onPunchDetected = null;
     
     // Grid configuration: 2 columns (left/right), 3 rows (top/middle/bottom)
     const GRID_COLS = 2;
     const GRID_ROWS = 3;
     
     // Hand positions in grid
-    let leftHandGrid = null;  // { row: 0-2, col: 0-1 }
+    let leftHandGrid = null;
     let rightHandGrid = null;
     
-    // Grid cell elements for visual feedback
-    let gridCells = [];
+    // Raw landmark data for depth processing
+    let lastResults = null;
     
     // Initialize MediaPipe Hands
     async function initMediaPipe() {
@@ -37,8 +37,8 @@ const CameraDetection = (function() {
             hands.setOptions({
                 maxNumHands: 2,
                 modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
             });
             
             hands.onResults(onResults);
@@ -74,7 +74,7 @@ const CameraDetection = (function() {
             video = document.getElementById('cameraFeed');
             canvasOverlay = document.getElementById('cameraOverlay');
             
-            // Clean up any existing stream to prevent resource leaks
+            // Clean up any existing stream
             if (video && video.srcObject) {
                 video.srcObject.getTracks().forEach(track => track.stop());
                 video.srcObject = null;
@@ -85,12 +85,13 @@ const CameraDetection = (function() {
                 ctxOverlay = canvasOverlay.getContext('2d');
             }
             
-            // Get camera access
+            // Get camera access with higher resolution for better depth estimation
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { 
-                    width: 320, 
-                    height: 240,
-                    facingMode: 'user'
+                    width: { ideal: 640 }, 
+                    height: { ideal: 480 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30 }
                 }
             });
             
@@ -105,18 +106,17 @@ const CameraDetection = (function() {
             
             // Set canvas size to match video
             if (canvasOverlay) {
-                canvasOverlay.width = video.videoWidth || 320;
-                canvasOverlay.height = video.videoHeight || 240;
+                canvasOverlay.width = video.videoWidth || 640;
+                canvasOverlay.height = video.videoHeight || 480;
             }
             
             isRunning = true;
             
             if (statusEl) {
-                statusEl.textContent = 'Camera active - detecting hands...';
+                statusEl.textContent = 'Camera active - detecting hands & depth...';
                 statusEl.className = 'camera-status active';
             }
             
-            // Re-enable button and update text so user can stop the camera
             if (startBtn) {
                 startBtn.disabled = false;
                 startBtn.textContent = 'Stop Camera';
@@ -148,6 +148,8 @@ const CameraDetection = (function() {
     
     // Process MediaPipe results
     function onResults(results) {
+        lastResults = results;
+        
         // Clear overlay
         if (ctxOverlay && canvasOverlay) {
             ctxOverlay.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
@@ -160,33 +162,34 @@ const CameraDetection = (function() {
         leftHandGrid = null;
         rightHandGrid = null;
         
+        // Process with depth sensor
+        let depthData = null;
+        if (typeof DepthSensor !== 'undefined') {
+            depthData = DepthSensor.update(results);
+        }
+        
         if (results.multiHandLandmarks && results.multiHandedness) {
             for (let i = 0; i < results.multiHandLandmarks.length; i++) {
                 const landmarks = results.multiHandLandmarks[i];
                 const handedness = results.multiHandedness[i];
                 
                 // Get wrist position (landmark 0) as hand position
-                // We use wrist as it's more stable
                 const wrist = landmarks[0];
-                
-                // Also consider the middle finger MCP (landmark 9) for better center
                 const middleMCP = landmarks[9];
                 
                 // Average position
                 const handX = (wrist.x + middleMCP.x) / 2;
                 const handY = (wrist.y + middleMCP.y) / 2;
                 
-                // Convert to grid position
-                // Note: x is mirrored because video is mirrored
-                const gridCol = handX < 0.5 ? 1 : 0;  // Mirrored: left half = right column
+                // Convert to grid position (mirrored)
+                const gridCol = handX < 0.5 ? 1 : 0;
                 const gridRow = Math.floor(handY * GRID_ROWS);
                 const clampedRow = Math.max(0, Math.min(GRID_ROWS - 1, gridRow));
                 
                 const gridPos = { row: clampedRow, col: gridCol };
                 
                 // MediaPipe returns "Left" or "Right" from camera perspective
-                // Since video is mirrored, we need to swap
-                const isLeftHand = handedness.label === 'Right';  // Mirrored
+                const isLeftHand = handedness.label === 'Right';
                 
                 if (isLeftHand) {
                     leftHandGrid = gridPos;
@@ -196,7 +199,7 @@ const CameraDetection = (function() {
                 
                 // Draw hand landmarks on overlay
                 if (ctxOverlay) {
-                    drawHandLandmarks(landmarks, isLeftHand);
+                    drawHandLandmarks(landmarks, isLeftHand, depthData);
                 }
             }
         }
@@ -204,20 +207,28 @@ const CameraDetection = (function() {
         // Update grid highlights
         updateGridHighlights();
         
+        // Update 3D game with hand tracking data
+        if (typeof BoxingGame3D !== 'undefined' && depthData) {
+            BoxingGame3D.updateHandTracking(depthData.left, depthData.right);
+        }
+        
         // Detect stance based on hand positions
         detectStance();
         
         // Update detection info display
-        updateDetectionInfo();
+        updateDetectionInfo(depthData);
     }
     
-    // Draw hand landmarks on overlay
-    function drawHandLandmarks(landmarks, isLeftHand) {
+    // Draw hand landmarks on overlay with depth visualization
+    function drawHandLandmarks(landmarks, isLeftHand, depthData) {
         if (!ctxOverlay || !canvasOverlay) return;
         
-        const color = isLeftHand ? '#e94560' : '#4ecdc4';
+        const baseColor = isLeftHand ? '#e94560' : '#4ecdc4';
         const width = canvasOverlay.width;
         const height = canvasOverlay.height;
+        
+        // Get depth info for this hand
+        const handDepth = depthData ? (isLeftHand ? depthData.left : depthData.right) : null;
         
         // Draw connections
         const connections = [
@@ -229,26 +240,94 @@ const CameraDetection = (function() {
             [5, 9], [9, 13], [13, 17]  // Palm
         ];
         
-        ctxOverlay.strokeStyle = color;
-        ctxOverlay.lineWidth = 2;
+        // Adjust line width based on depth (thicker = closer)
+        let lineWidth = 2;
+        if (handDepth && handDepth.depth) {
+            lineWidth = Math.max(1, Math.min(5, 2 - handDepth.depth * 10));
+        }
+        
+        ctxOverlay.strokeStyle = baseColor;
+        ctxOverlay.lineWidth = lineWidth;
         
         for (const [i, j] of connections) {
             const start = landmarks[i];
             const end = landmarks[j];
-            // Mirror X coordinate
             ctxOverlay.beginPath();
             ctxOverlay.moveTo((1 - start.x) * width, start.y * height);
             ctxOverlay.lineTo((1 - end.x) * width, end.y * height);
             ctxOverlay.stroke();
         }
         
-        // Draw landmarks
-        ctxOverlay.fillStyle = color;
-        for (const landmark of landmarks) {
+        // Draw landmarks with depth-based size
+        for (let idx = 0; idx < landmarks.length; idx++) {
+            const landmark = landmarks[idx];
+            
+            // Size based on z-coordinate (closer = larger)
+            let size = 3;
+            if (landmark.z !== undefined) {
+                size = Math.max(2, Math.min(8, 4 - landmark.z * 20));
+            }
+            
+            ctxOverlay.fillStyle = baseColor;
             ctxOverlay.beginPath();
-            // Mirror X coordinate
-            ctxOverlay.arc((1 - landmark.x) * width, landmark.y * height, 3, 0, 2 * Math.PI);
+            ctxOverlay.arc((1 - landmark.x) * width, landmark.y * height, size, 0, 2 * Math.PI);
             ctxOverlay.fill();
+        }
+        
+        // Draw depth indicator
+        if (handDepth) {
+            const centerX = (1 - landmarks[9].x) * width;
+            const centerY = landmarks[9].y * height;
+            
+            // Depth bar
+            const barHeight = 40;
+            const barWidth = 6;
+            const depthNormalized = Math.max(-1, Math.min(1, handDepth.depth * 5));
+            const fillHeight = Math.abs(depthNormalized) * barHeight / 2;
+            
+            ctxOverlay.fillStyle = 'rgba(0,0,0,0.5)';
+            ctxOverlay.fillRect(centerX - barWidth/2, centerY - barHeight/2, barWidth, barHeight);
+            
+            // Fill based on depth direction
+            if (depthNormalized < 0) {
+                // Forward (closer) - fill from center up
+                ctxOverlay.fillStyle = '#00ff00';
+                ctxOverlay.fillRect(centerX - barWidth/2, centerY - fillHeight, barWidth, fillHeight);
+            } else {
+                // Back (farther) - fill from center down
+                ctxOverlay.fillStyle = '#ff6600';
+                ctxOverlay.fillRect(centerX - barWidth/2, centerY, barWidth, fillHeight);
+            }
+            
+            // Punch indicator
+            if (handDepth.isPunching) {
+                ctxOverlay.strokeStyle = '#ffff00';
+                ctxOverlay.lineWidth = 3;
+                ctxOverlay.beginPath();
+                ctxOverlay.arc(centerX, centerY, 30 + handDepth.punchPower * 20, 0, Math.PI * 2);
+                ctxOverlay.stroke();
+                
+                ctxOverlay.fillStyle = '#ffff00';
+                ctxOverlay.font = 'bold 14px Arial';
+                ctxOverlay.fillText('PUNCH!', centerX - 25, centerY - 40);
+            }
+            
+            // Velocity arrow
+            if (Math.abs(handDepth.velocity) > 0.002) {
+                const arrowLength = Math.min(30, Math.abs(handDepth.velocity) * 500);
+                const arrowDir = handDepth.velocity < 0 ? -1 : 1;
+                
+                ctxOverlay.strokeStyle = handDepth.velocity < 0 ? '#00ff00' : '#ff6600';
+                ctxOverlay.lineWidth = 2;
+                ctxOverlay.beginPath();
+                ctxOverlay.moveTo(centerX + 20, centerY);
+                ctxOverlay.lineTo(centerX + 20 + arrowLength * arrowDir, centerY);
+                // Arrow head
+                ctxOverlay.lineTo(centerX + 20 + arrowLength * arrowDir - 5 * arrowDir, centerY - 5);
+                ctxOverlay.moveTo(centerX + 20 + arrowLength * arrowDir, centerY);
+                ctxOverlay.lineTo(centerX + 20 + arrowLength * arrowDir - 5 * arrowDir, centerY + 5);
+                ctxOverlay.stroke();
+            }
         }
     }
     
@@ -274,10 +353,12 @@ const CameraDetection = (function() {
         }
     }
     
-    // Update detection info display
-    function updateDetectionInfo() {
+    // Update detection info display with depth data
+    function updateDetectionInfo(depthData) {
         const leftPosEl = document.getElementById('leftHandPos');
         const rightPosEl = document.getElementById('rightHandPos');
+        const leftDepthEl = document.getElementById('leftHandDepth');
+        const rightDepthEl = document.getElementById('rightHandDepth');
         
         const rowNames = ['Top', 'Middle', 'Bottom'];
         const colNames = ['Left', 'Right'];
@@ -297,6 +378,25 @@ const CameraDetection = (function() {
                 rightPosEl.textContent = 'Not detected';
             }
         }
+        
+        // Depth info
+        if (depthData) {
+            if (leftDepthEl && depthData.left) {
+                const d = depthData.left;
+                leftDepthEl.textContent = `Depth: ${d.depth.toFixed(2)} | Vel: ${d.velocity.toFixed(3)}`;
+                leftDepthEl.className = d.isPunching ? 'depth-info punching' : 'depth-info';
+            } else if (leftDepthEl) {
+                leftDepthEl.textContent = '';
+            }
+            
+            if (rightDepthEl && depthData.right) {
+                const d = depthData.right;
+                rightDepthEl.textContent = `Depth: ${d.depth.toFixed(2)} | Vel: ${d.velocity.toFixed(3)}`;
+                rightDepthEl.className = d.isPunching ? 'depth-info punching' : 'depth-info';
+            } else if (rightDepthEl) {
+                rightDepthEl.textContent = '';
+            }
+        }
     }
     
     // Detect stance from grid positions
@@ -306,88 +406,43 @@ const CameraDetection = (function() {
         const lg = leftHandGrid;
         const rg = rightHandGrid;
         
-        // No hands detected
         if (!lg && !rg) {
             stance = 'idle';
-        }
-        // Both hands detected
-        else if (lg && rg) {
-            // Both hands in top row = Guard
+        } else if (lg && rg) {
             if (lg.row === 0 && rg.row === 0) {
-                // Both top-left = guard left position
                 if (lg.col === 0 && rg.col === 0) {
                     stance = 'guardLeft';
-                }
-                // Both top-right = guard right position
-                else if (lg.col === 1 && rg.col === 1) {
+                } else if (lg.col === 1 && rg.col === 1) {
                     stance = 'guardRight';
-                }
-                // Mixed top = standard guard
-                else {
+                } else {
                     stance = 'guard';
                 }
-            }
-            // Both hands in bottom row = duck
-            else if (lg.row === 2 && rg.row === 2) {
-                if (lg.col === 0 || rg.col === 0) {
-                    stance = 'duckLeft';
-                } else {
-                    stance = 'duckRight';
-                }
-            }
-            // Both hands in middle row = block body
-            else if (lg.row === 1 && rg.row === 1) {
+            } else if (lg.row === 2 && rg.row === 2) {
+                stance = lg.col === 0 ? 'duckLeft' : 'duckRight';
+            } else if (lg.row === 1 && rg.row === 1) {
                 stance = 'blockBody';
-            }
-            // One hand extended (top), other in middle/guard = punch
-            else if (lg.row === 0 && rg.row >= 1) {
-                // Left hand up = left jab
+            } else if (lg.row === 0 && rg.row >= 1) {
                 stance = 'jabLeft';
-            }
-            else if (rg.row === 0 && lg.row >= 1) {
-                // Right hand up = right jab
+            } else if (rg.row === 0 && lg.row >= 1) {
                 stance = 'jabRight';
-            }
-            // Mixed positions
-            else {
+            } else {
                 stance = 'guard';
             }
-        }
-        // Only left hand detected
-        else if (lg && !rg) {
-            if (lg.row === 0) {
-                stance = 'jabLeft';  // Left hand up = punch
-            } else if (lg.row === 1) {
-                if (lg.col === 0) {
-                    stance = 'hookLeft';  // Left hand middle-left = hook
-                } else {
-                    stance = 'blockBody';
-                }
-            } else {
-                stance = 'duckLeft';  // Left hand bottom = duck
-            }
-        }
-        // Only right hand detected
-        else if (rg && !lg) {
-            if (rg.row === 0) {
-                stance = 'jabRight';  // Right hand up = punch
-            } else if (rg.row === 1) {
-                if (rg.col === 1) {
-                    stance = 'hookRight';  // Right hand middle-right = hook
-                } else {
-                    stance = 'blockBody';
-                }
-            } else {
-                stance = 'duckRight';  // Right hand bottom = duck
-            }
+        } else if (lg && !rg) {
+            if (lg.row === 0) stance = 'jabLeft';
+            else if (lg.row === 1) stance = lg.col === 0 ? 'hookLeft' : 'blockBody';
+            else stance = 'duckLeft';
+        } else if (rg && !lg) {
+            if (rg.row === 0) stance = 'jabRight';
+            else if (rg.row === 1) stance = rg.col === 1 ? 'hookRight' : 'blockBody';
+            else stance = 'duckRight';
         }
         
-        // Update game stance
+        // Update legacy game stance
         if (typeof BoxingGame !== 'undefined') {
             BoxingGame.setStance(stance);
         }
         
-        // Callback
         if (onStanceDetected) {
             onStanceDetected(stance);
         }
@@ -414,11 +469,33 @@ const CameraDetection = (function() {
             startBtn.disabled = false;
             startBtn.textContent = 'Start Camera';
         }
+        
+        // Reset depth sensor
+        if (typeof DepthSensor !== 'undefined') {
+            DepthSensor.reset();
+        }
     }
     
     // Initialize
     async function init() {
         const success = await initMediaPipe();
+        
+        // Setup depth sensor punch callback
+        if (typeof DepthSensor !== 'undefined') {
+            DepthSensor.setOnPunchDetected((punchData) => {
+                console.log('Punch detected:', punchData);
+                
+                // Trigger 3D punch animation
+                if (typeof BoxingGame3D !== 'undefined') {
+                    BoxingGame3D.triggerPunch(punchData.hand, punchData.power);
+                }
+                
+                // Callback
+                if (onPunchDetected) {
+                    onPunchDetected(punchData);
+                }
+            });
+        }
         
         const startBtn = document.getElementById('startBtn');
         if (startBtn && success) {
@@ -435,9 +512,13 @@ const CameraDetection = (function() {
         return success;
     }
     
-    // Set callback for stance detection
+    // Set callbacks
     function setOnStanceDetected(callback) {
         onStanceDetected = callback;
+    }
+    
+    function setOnPunchDetected(callback) {
+        onPunchDetected = callback;
     }
     
     // Get current hand positions
@@ -448,12 +529,19 @@ const CameraDetection = (function() {
         };
     }
     
+    // Get raw landmark data
+    function getRawLandmarks() {
+        return lastResults;
+    }
+    
     // Public API
     return {
         init,
         startCamera,
         stopCamera,
         setOnStanceDetected,
-        getHandPositions
+        setOnPunchDetected,
+        getHandPositions,
+        getRawLandmarks
     };
 })();

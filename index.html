@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Game - Camera Motion Control</title>
+    <title>Boxing Game - First Person 3D with Motion Control</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>🥊 Boxing Game</h1>
-    <p class="subtitle">Camera-Based Motion Detection</p>
+    <p class="subtitle">First Person 3D View with AI Depth Sensing</p>
     
     <div class="game-container">
-        <!-- Game Canvas -->
+        <!-- 3D Game View -->
         <div class="game-area">
-            <h2>Boxing Ring</h2>
-            <canvas id="gameCanvas" width="400" height="500"></canvas>
-            <div class="current-stance">Current Stance: <span id="stanceLabel">Idle</span></div>
+            <h2>First Person View</h2>
+            <div id="game3DContainer" class="game-3d-container">
+                <!-- Three.js canvas will be inserted here -->
+            </div>
+            <div class="current-stance">
+                Punch Power: <span id="punchPower">Ready</span>
+            </div>
         </div>
         
         <!-- Camera Feed -->
@@ -47,36 +51,65 @@
             
             <!-- Detection Info -->
             <div class="detection-info">
-                <h4>Hand Detection</h4>
+                <h4>Hand Detection & Depth</h4>
                 <div class="hand-position">
                     <div class="hand-indicator left"></div>
-                    <span>Left Hand: <span id="leftHandPos">Not detected</span></span>
+                    <div class="hand-info">
+                        <span>Left Hand: <span id="leftHandPos">Not detected</span></span>
+                        <span id="leftHandDepth" class="depth-info"></span>
+                    </div>
                 </div>
                 <div class="hand-position">
                     <div class="hand-indicator right"></div>
-                    <span>Right Hand: <span id="rightHandPos">Not detected</span></span>
+                    <div class="hand-info">
+                        <span>Right Hand: <span id="rightHandPos">Not detected</span></span>
+                        <span id="rightHandDepth" class="depth-info"></span>
+                    </div>
                 </div>
+            </div>
+            
+            <!-- Punch Log -->
+            <div class="punch-log">
+                <h4>Punch Log</h4>
+                <div id="punchLogList"></div>
             </div>
         </div>
     </div>
     
     <!-- Instructions -->
     <div class="instructions">
-        <h3>How to Play</h3>
+        <h3>How to Play - Forward Punch Detection</h3>
         <ul>
-            <li><span class="key-highlight">Both hands up (top row)</span> → Guard position</li>
-            <li><span class="key-highlight">Left hand up only</span> → Left Jab punch</li>
-            <li><span class="key-highlight">Right hand up only</span> → Right Jab punch</li>
-            <li><span class="key-highlight">Left hand middle-left</span> → Left Hook</li>
-            <li><span class="key-highlight">Right hand middle-right</span> → Right Hook</li>
-            <li><span class="key-highlight">Both hands middle</span> → Block Body</li>
-            <li><span class="key-highlight">Both hands bottom</span> → Duck</li>
-            <li><span class="key-highlight">No hands detected</span> → Idle stance</li>
+            <li><span class="key-highlight">Punch forward</span> → Your 3D gloves punch forward in the game</li>
+            <li><span class="key-highlight">Move hands left/right</span> → Gloves follow your hand position</li>
+            <li><span class="key-highlight">Move hands up/down</span> → Adjust glove height</li>
+            <li><span class="key-highlight">Fast forward motion</span> → Stronger punch with more effect</li>
         </ul>
-        <p><strong>Tips:</strong> Stand about 2-3 feet from your camera. Make sure your hands are visible. 
-        The game detects your hand positions in a 2x3 grid (left/right columns, top/middle/bottom rows).</p>
+        <p><strong>AI Depth Sensing:</strong> The system tracks your hand depth using MediaPipe's z-coordinates 
+        combined with hand scale estimation. When you punch forward, the velocity is calculated to detect punch power.</p>
+        
+        <h4>Depth Indicator Legend</h4>
+        <ul>
+            <li><span class="legend-item green">Green bar/arrow</span> = Moving forward (toward camera/punching)</li>
+            <li><span class="legend-item orange">Orange bar/arrow</span> = Moving backward (away from camera)</li>
+            <li><span class="legend-item yellow">Yellow ring</span> = Punch detected!</li>
+        </ul>
+        
+        <h4>Using Mixamo Models</h4>
+        <p>To use real 3D character models from Mixamo:</p>
+        <ol>
+            <li>Visit <a href="https://www.mixamo.com" target="_blank">mixamo.com</a> and create a free account</li>
+            <li>Download a character model in FBX or GLB format</li>
+            <li>Convert to GLB if needed using <a href="https://gltf.report/" target="_blank">gltf.report</a></li>
+            <li>Place the file in this project folder</li>
+            <li>Call <code>BoxingGame3D.setGloveModel('your-model.glb')</code> in the console</li>
+        </ol>
     </div>
 
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
     <!-- MediaPipe Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -84,17 +117,80 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     
     <!-- Game Scripts -->
+    <script src="depthSensor.js"></script>
+    <script src="game3d.js"></script>
     <script src="game.js"></script>
     <script src="camera.js"></script>
     
     <script>
+        // Punch log functionality
+        const punchLog = [];
+        const maxLogEntries = 5;
+        
+        function addPunchToLog(punchData) {
+            const entry = {
+                time: new Date().toLocaleTimeString(),
+                hand: punchData.hand,
+                power: Math.round(punchData.power * 100)
+            };
+            
+            punchLog.unshift(entry);
+            if (punchLog.length > maxLogEntries) {
+                punchLog.pop();
+            }
+            
+            updatePunchLogDisplay();
+            updatePunchPowerDisplay(punchData);
+        }
+        
+        function updatePunchLogDisplay() {
+            const logEl = document.getElementById('punchLogList');
+            if (!logEl) return;
+            
+            logEl.innerHTML = punchLog.map(entry => 
+                `<div class="punch-entry ${entry.hand}">
+                    <span class="punch-time">${entry.time}</span>
+                    <span class="punch-hand">${entry.hand.toUpperCase()}</span>
+                    <span class="punch-power-bar">
+                        <span class="punch-power-fill" style="width: ${entry.power}%"></span>
+                    </span>
+                    <span class="punch-power-text">${entry.power}%</span>
+                </div>`
+            ).join('');
+        }
+        
+        function updatePunchPowerDisplay(punchData) {
+            const powerEl = document.getElementById('punchPower');
+            if (!powerEl) return;
+            
+            const power = Math.round(punchData.power * 100);
+            powerEl.textContent = `${punchData.hand.toUpperCase()} - ${power}% Power!`;
+            powerEl.className = 'punch-active';
+            
+            setTimeout(() => {
+                powerEl.textContent = 'Ready';
+                powerEl.className = '';
+            }, 1000);
+        }
+        
         // Initialize game and camera detection
         document.addEventListener('DOMContentLoaded', async () => {
-            // Initialize the boxing game
-            BoxingGame.init('gameCanvas');
+            // Initialize the 3D boxing game
+            const game3dSuccess = BoxingGame3D.init('game3DContainer');
+            if (!game3dSuccess) {
+                console.error('Failed to initialize 3D game');
+            }
+            
+            // Initialize legacy 2D game (optional, for fallback)
+            // BoxingGame.init('gameCanvas');
             
             // Initialize camera detection
             await CameraDetection.init();
+            
+            // Set up punch callback for logging
+            CameraDetection.setOnPunchDetected((punchData) => {
+                addPunchToLog(punchData);
+            });
         });
     </script>
 </body>
