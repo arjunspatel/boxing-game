@@ -3,748 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Game - Placeholder Graphics</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        h1 {
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 20px;
-        }
-        
-        .main-container {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .game-area {
-            background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
-        .game-area h2 {
-            text-align: center;
-            margin-top: 0;
-            color: #e94560;
-        }
-        
-        #gameCanvas {
-            border-radius: 10px;
-            display: block;
-            margin: 0 auto;
-        }
-        
-        .controls {
-            background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-width: 350px;
-        }
-        
-        .controls h2 {
-            margin-top: 0;
-            color: #e94560;
-        }
-        
-        .grid-display {
-            display: grid;
-            grid-template-columns: repeat(2, 80px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 5px;
-            margin: 15px auto;
-            width: fit-content;
-        }
-        
-        .grid-cell {
-            background: #333;
-            border: 2px solid #555;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 12px;
-            text-align: center;
-            padding: 5px;
-        }
-        
-        .grid-cell:hover {
-            background: #444;
-            border-color: #e94560;
-        }
-        
-        .grid-cell.active-left {
-            background: #e94560;
-            border-color: #ff6b8a;
-        }
-        
-        .grid-cell.active-right {
-            background: #4ecdc4;
-            border-color: #7eddd6;
-        }
-        
-        .stance-buttons {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-top: 15px;
-        }
-        
-        .stance-btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
-            font-size: 12px;
-        }
-        
-        .stance-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .stance-btn.idle { background: #6c757d; color: white; }
-        .stance-btn.guard { background: #28a745; color: white; }
-        .stance-btn.jab-left { background: #e94560; color: white; }
-        .stance-btn.jab-right { background: #4ecdc4; color: white; }
-        .stance-btn.hook-left { background: #dc3545; color: white; }
-        .stance-btn.hook-right { background: #17a2b8; color: white; }
-        .stance-btn.duck-left { background: #fd7e14; color: white; }
-        .stance-btn.duck-right { background: #20c997; color: white; }
-        .stance-btn.block-body { background: #6f42c1; color: white; }
-        
-        .legend {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            font-size: 12px;
-        }
-        
-        .legend h4 {
-            margin: 0 0 10px 0;
-            color: #e94560;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 5px 0;
-        }
-        
-        .legend-color {
-            width: 15px;
-            height: 15px;
-            border-radius: 3px;
-        }
-        
-        .current-stance {
-            text-align: center;
-            font-size: 18px;
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(233, 69, 96, 0.2);
-            border-radius: 8px;
-            border: 1px solid #e94560;
-        }
-        
-        .all-stances {
-            margin-top: 30px;
-            width: 100%;
-            max-width: 900px;
-        }
-        
-        .all-stances h2 {
-            text-align: center;
-            color: #e94560;
-        }
-        
-        .stance-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            padding: 20px;
-            background: linear-gradient(to bottom, #2d2d44 0%, #1a1a2e 100%);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
-        .stance-preview {
-            text-align: center;
-            padding: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .stance-preview:hover {
-            transform: scale(1.05);
-        }
-        
-        .stance-preview canvas {
-            border-radius: 8px;
-            margin-bottom: 8px;
-        }
-        
-        .stance-preview .label {
-            font-size: 12px;
-            color: #ccc;
-        }
-    </style>
+    <title>Boxing Game - Camera Motion Control</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>🥊 Boxing Game</h1>
-    <p class="subtitle">Camera-Based Motion Detection • Placeholder Graphics Demo</p>
+    <p class="subtitle">Camera-Based Motion Detection</p>
     
-    <div class="main-container">
+    <div class="game-container">
+        <!-- Game Canvas -->
         <div class="game-area">
             <h2>Boxing Ring</h2>
             <canvas id="gameCanvas" width="400" height="500"></canvas>
             <div class="current-stance">Current Stance: <span id="stanceLabel">Idle</span></div>
         </div>
         
-        <div class="controls">
-            <h2>2x3 Detection Grid</h2>
-            <p style="font-size: 12px; color: #aaa;">Click cells to simulate glove positions</p>
-            
-            <div class="grid-display">
-                <div class="grid-cell" data-row="0" data-col="0">Top<br>Left</div>
-                <div class="grid-cell" data-row="0" data-col="1">Top<br>Right</div>
-                <div class="grid-cell" data-row="1" data-col="0">Mid<br>Left</div>
-                <div class="grid-cell" data-row="1" data-col="1">Mid<br>Right</div>
-                <div class="grid-cell" data-row="2" data-col="0">Bottom<br>Left</div>
-                <div class="grid-cell" data-row="2" data-col="1">Bottom<br>Right</div>
+        <!-- Camera Feed -->
+        <div class="camera-section">
+            <h2>Camera Feed</h2>
+            <div class="camera-container">
+                <video id="cameraFeed" playsinline autoplay muted></video>
+                <canvas id="cameraOverlay"></canvas>
+                
+                <!-- Grid overlay for visual feedback -->
+                <div class="grid-overlay">
+                    <div class="grid-cell-overlay" data-index="0">Top Left</div>
+                    <div class="grid-cell-overlay" data-index="1">Top Right</div>
+                    <div class="grid-cell-overlay" data-index="2">Mid Left</div>
+                    <div class="grid-cell-overlay" data-index="3">Mid Right</div>
+                    <div class="grid-cell-overlay" data-index="4">Bot Left</div>
+                    <div class="grid-cell-overlay" data-index="5">Bot Right</div>
+                </div>
+                
+                <!-- Loading overlay -->
+                <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Loading MediaPipe...</div>
+                </div>
             </div>
             
-            <div class="legend">
-                <h4>Grid Legend</h4>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #e94560;"></div>
-                    <span>Left Glove</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #4ecdc4;"></div>
-                    <span>Right Glove</span>
-                </div>
-            </div>
+            <p class="camera-status" id="cameraStatus">Loading...</p>
+            <button class="start-btn" id="startBtn" disabled>Start Camera</button>
             
-            <h3 style="margin-bottom: 10px;">Quick Stances</h3>
-            <div class="stance-buttons">
-                <button class="stance-btn idle" onclick="setStance('idle')">Idle</button>
-                <button class="stance-btn guard" onclick="setStance('guard')">Guard Up</button>
-                <button class="stance-btn jab-left" onclick="setStance('jabLeft')">Left Jab</button>
-                <button class="stance-btn jab-right" onclick="setStance('jabRight')">Right Jab</button>
-                <button class="stance-btn hook-left" onclick="setStance('hookLeft')">Left Hook</button>
-                <button class="stance-btn hook-right" onclick="setStance('hookRight')">Right Hook</button>
-                <button class="stance-btn duck-left" onclick="setStance('duckLeft')">Duck Left</button>
-                <button class="stance-btn duck-right" onclick="setStance('duckRight')">Duck Right</button>
-                <button class="stance-btn block-body" onclick="setStance('blockBody')">Block Body</button>
+            <!-- Detection Info -->
+            <div class="detection-info">
+                <h4>Hand Detection</h4>
+                <div class="hand-position">
+                    <div class="hand-indicator left"></div>
+                    <span>Left Hand: <span id="leftHandPos">Not detected</span></span>
+                </div>
+                <div class="hand-position">
+                    <div class="hand-indicator right"></div>
+                    <span>Right Hand: <span id="rightHandPos">Not detected</span></span>
+                </div>
             </div>
         </div>
     </div>
     
-    <div class="all-stances">
-        <h2>All Stance Previews</h2>
-        <div class="stance-gallery" id="stanceGallery"></div>
+    <!-- Instructions -->
+    <div class="instructions">
+        <h3>How to Play</h3>
+        <ul>
+            <li><span class="key-highlight">Both hands up (top row)</span> → Guard position</li>
+            <li><span class="key-highlight">Left hand up only</span> → Left Jab punch</li>
+            <li><span class="key-highlight">Right hand up only</span> → Right Jab punch</li>
+            <li><span class="key-highlight">Left hand middle-left</span> → Left Hook</li>
+            <li><span class="key-highlight">Right hand middle-right</span> → Right Hook</li>
+            <li><span class="key-highlight">Both hands middle</span> → Block Body</li>
+            <li><span class="key-highlight">Both hands bottom</span> → Duck</li>
+            <li><span class="key-highlight">No hands detected</span> → Idle stance</li>
+        </ul>
+        <p><strong>Tips:</strong> Stand about 2-3 feet from your camera. Make sure your hands are visible. 
+        The game detects your hand positions in a 2x3 grid (left/right columns, top/middle/bottom rows).</p>
     </div>
 
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <!-- Game Scripts -->
+    <script src="game.js"></script>
+    <script src="camera.js"></script>
+    
     <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Boxer configuration
-        const boxer = {
-            x: 200,
-            y: 280,
-            bodyWidth: 80,
-            bodyHeight: 120,
-            headRadius: 35,
-            armLength: 70,
-            gloveRadius: 25
-        };
-        
-        // Colors for the boxer (viewed from behind)
-        const colors = {
-            skin: '#d4a574',
-            skinShadow: '#b8956a',
-            shorts: '#e94560',
-            shortsShadow: '#c73e54',
-            gloveLeft: '#e94560',
-            gloveRight: '#4ecdc4',
-            hair: '#2d2d2d',
-            tank: '#1a1a2e',
-            tankHighlight: '#2d2d44'
-        };
-        
-        // Stance definitions - positions for left and right gloves
-        // Coordinates are relative to boxer center, from behind view
-        const stances = {
-            idle: {
-                name: 'Idle',
-                leftGlove: { x: -50, y: 20, z: 0 },
-                rightGlove: { x: 50, y: 20, z: 0 },
-                bodyOffset: { x: 0, y: 0 },
-                lean: 0
-            },
-            guard: {
-                name: 'Guard Up',
-                leftGlove: { x: -35, y: -60, z: 10 },
-                rightGlove: { x: 35, y: -60, z: 10 },
-                bodyOffset: { x: 0, y: 0 },
-                lean: 0
-            },
-            jabLeft: {
-                name: 'Left Jab',
-                leftGlove: { x: -20, y: -100, z: 30 },
-                rightGlove: { x: 40, y: -50, z: 5 },
-                bodyOffset: { x: -5, y: -5 },
-                lean: -5
-            },
-            jabRight: {
-                name: 'Right Jab',
-                leftGlove: { x: -40, y: -50, z: 5 },
-                rightGlove: { x: 20, y: -100, z: 30 },
-                bodyOffset: { x: 5, y: -5 },
-                lean: 5
-            },
-            hookLeft: {
-                name: 'Left Hook',
-                leftGlove: { x: -80, y: -40, z: 20 },
-                rightGlove: { x: 35, y: -55, z: 5 },
-                bodyOffset: { x: 10, y: 0 },
-                lean: 15
-            },
-            hookRight: {
-                name: 'Right Hook',
-                leftGlove: { x: -35, y: -55, z: 5 },
-                rightGlove: { x: 80, y: -40, z: 20 },
-                bodyOffset: { x: -10, y: 0 },
-                lean: -15
-            },
-            duckLeft: {
-                name: 'Duck Left',
-                leftGlove: { x: -45, y: -30, z: 5 },
-                rightGlove: { x: 30, y: -30, z: 5 },
-                bodyOffset: { x: -30, y: 40 },
-                lean: -20
-            },
-            duckRight: {
-                name: 'Duck Right',
-                leftGlove: { x: -30, y: -30, z: 5 },
-                rightGlove: { x: 45, y: -30, z: 5 },
-                bodyOffset: { x: 30, y: 40 },
-                lean: 20
-            },
-            blockBody: {
-                name: 'Block Body',
-                leftGlove: { x: -30, y: 10, z: 15 },
-                rightGlove: { x: 30, y: 10, z: 15 },
-                bodyOffset: { x: 0, y: 10 },
-                lean: 0
-            }
-        };
-        
-        let currentStance = 'idle';
-        let animationProgress = 1;
-        let previousStance = null;
-        let targetStance = null;
-        
-        // Draw the boxing ring floor
-        function drawRing(ctx, width, height) {
-            // Ring floor with perspective
-            ctx.fillStyle = '#8b7355';
-            ctx.beginPath();
-            ctx.moveTo(0, height * 0.55);
-            ctx.lineTo(width, height * 0.55);
-            ctx.lineTo(width, height);
-            ctx.lineTo(0, height);
-            ctx.closePath();
-            ctx.fill();
+        // Initialize game and camera detection
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize the boxing game
+            BoxingGame.init('gameCanvas');
             
-            // Ring mat
-            ctx.fillStyle = '#4a90a4';
-            ctx.beginPath();
-            ctx.moveTo(width * 0.05, height * 0.58);
-            ctx.lineTo(width * 0.95, height * 0.58);
-            ctx.lineTo(width * 0.85, height * 0.95);
-            ctx.lineTo(width * 0.15, height * 0.95);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Ring mat center circle
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.ellipse(width/2, height * 0.78, 60, 25, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            // Ropes (background)
-            const ropeColors = ['#ff0000', '#ffffff', '#ff0000'];
-            for (let i = 0; i < 3; i++) {
-                ctx.strokeStyle = ropeColors[i];
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                const ropeY = height * 0.35 + i * 25;
-                ctx.moveTo(0, ropeY);
-                ctx.quadraticCurveTo(width/2, ropeY + 5, width, ropeY);
-                ctx.stroke();
-            }
-            
-            // Corner posts
-            ctx.fillStyle = '#333';
-            ctx.fillRect(-5, height * 0.3, 15, height * 0.35);
-            ctx.fillRect(width - 10, height * 0.3, 15, height * 0.35);
-        }
-        
-        // Draw boxer from behind
-        function drawBoxer(ctx, stance, centerX, centerY, scale = 1) {
-            const s = stances[stance];
-            const bx = centerX + s.bodyOffset.x * scale;
-            const by = centerY + s.bodyOffset.y * scale;
-            
-            ctx.save();
-            ctx.translate(bx, by);
-            ctx.rotate(s.lean * Math.PI / 180);
-            ctx.scale(scale, scale);
-            
-            // Shadow on ground
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            ctx.ellipse(0, 150, 50, 15, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Legs
-            ctx.fillStyle = colors.skin;
-            // Left leg
-            ctx.beginPath();
-            ctx.moveTo(-25, 60);
-            ctx.quadraticCurveTo(-30, 100, -25, 140);
-            ctx.lineTo(-15, 140);
-            ctx.quadraticCurveTo(-15, 100, -15, 60);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Right leg
-            ctx.beginPath();
-            ctx.moveTo(25, 60);
-            ctx.quadraticCurveTo(30, 100, 25, 140);
-            ctx.lineTo(15, 140);
-            ctx.quadraticCurveTo(15, 100, 15, 60);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Shoes
-            ctx.fillStyle = '#1a1a1a';
-            ctx.beginPath();
-            ctx.ellipse(-20, 145, 15, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(20, 145, 15, 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Shorts
-            ctx.fillStyle = colors.shorts;
-            ctx.beginPath();
-            ctx.moveTo(-35, 30);
-            ctx.lineTo(35, 30);
-            ctx.lineTo(30, 70);
-            ctx.lineTo(-30, 70);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Shorts stripe
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(-2, 30, 4, 40);
-            
-            // Torso (tank top from behind)
-            ctx.fillStyle = colors.tank;
-            ctx.beginPath();
-            ctx.moveTo(-35, -50);
-            ctx.quadraticCurveTo(-45, 0, -35, 35);
-            ctx.lineTo(35, 35);
-            ctx.quadraticCurveTo(45, 0, 35, -50);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Tank top back detail
-            ctx.strokeStyle = colors.tankHighlight;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, -45);
-            ctx.lineTo(0, 30);
-            ctx.stroke();
-            
-            // Neck
-            ctx.fillStyle = colors.skin;
-            ctx.beginPath();
-            ctx.ellipse(0, -55, 15, 12, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Head (from behind)
-            ctx.fillStyle = colors.skin;
-            ctx.beginPath();
-            ctx.ellipse(0, -85, 30, 35, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Hair (back of head)
-            ctx.fillStyle = colors.hair;
-            ctx.beginPath();
-            ctx.ellipse(0, -90, 28, 30, 0, Math.PI, Math.PI * 2);
-            ctx.fill();
-            
-            // Ears
-            ctx.fillStyle = colors.skin;
-            ctx.beginPath();
-            ctx.ellipse(-30, -85, 6, 10, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(30, -85, 6, 10, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Draw arms and gloves
-            drawArm(ctx, s.leftGlove, colors.gloveLeft, true);
-            drawArm(ctx, s.rightGlove, colors.gloveRight, false);
-            
-            ctx.restore();
-        }
-        
-        function drawArm(ctx, glovePos, gloveColor, isLeft) {
-            const shoulderX = isLeft ? -35 : 35;
-            const shoulderY = -40;
-            
-            // Arm
-            ctx.strokeStyle = colors.skin;
-            ctx.lineWidth = 18;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(shoulderX, shoulderY);
-            
-            // Elbow position (midpoint with some offset)
-            const elbowX = shoulderX + (glovePos.x - shoulderX) * 0.5;
-            const elbowY = shoulderY + (glovePos.y - shoulderY) * 0.4 + 15;
-            
-            ctx.quadraticCurveTo(elbowX, elbowY, glovePos.x, glovePos.y);
-            ctx.stroke();
-            
-            // Glove
-            const gloveScale = 1 + glovePos.z * 0.01; // Larger when closer (punching)
-            ctx.fillStyle = gloveColor;
-            ctx.beginPath();
-            ctx.ellipse(glovePos.x, glovePos.y, 22 * gloveScale, 18 * gloveScale, 
-                       isLeft ? -0.3 : 0.3, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Glove highlight
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.beginPath();
-            ctx.ellipse(glovePos.x - 5, glovePos.y - 5, 8 * gloveScale, 6 * gloveScale, 
-                       0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Glove wrist band
-            ctx.fillStyle = '#fff';
-            const wristX = glovePos.x + (shoulderX - glovePos.x) * 0.15;
-            const wristY = glovePos.y + (shoulderY - glovePos.y) * 0.15;
-            ctx.beginPath();
-            ctx.ellipse(wristX, wristY, 12, 8, Math.atan2(glovePos.y - shoulderY, glovePos.x - shoulderX), 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // Main render function
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Background gradient (arena lights)
-            const gradient = ctx.createRadialGradient(
-                canvas.width/2, 0, 0,
-                canvas.width/2, 0, canvas.height
-            );
-            gradient.addColorStop(0, '#3d3d5c');
-            gradient.addColorStop(1, '#1a1a2e');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Spotlight effect
-            ctx.fillStyle = 'rgba(255,255,200,0.1)';
-            ctx.beginPath();
-            ctx.ellipse(canvas.width/2, canvas.height * 0.7, 150, 80, 0, 0, Math.PI * 2);
-            ctx.fill();
-            
-            drawRing(ctx, canvas.width, canvas.height);
-            drawBoxer(ctx, currentStance, boxer.x, boxer.y);
-            
-            requestAnimationFrame(render);
-        }
-        
-        // Set stance
-        function setStance(stance) {
-            if (stances[stance]) {
-                currentStance = stance;
-                document.getElementById('stanceLabel').textContent = stances[stance].name;
-            }
-        }
-        
-        // Grid interaction
-        let leftGloveCell = null;
-        let rightGloveCell = null;
-        
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.addEventListener('click', (e) => {
-                const row = parseInt(cell.dataset.row);
-                const col = parseInt(cell.dataset.col);
-                
-                // Toggle left glove with left click, right with shift+click
-                if (e.shiftKey) {
-                    if (cell.classList.contains('active-right')) {
-                        cell.classList.remove('active-right');
-                        rightGloveCell = null;
-                    } else {
-                        document.querySelectorAll('.grid-cell.active-right').forEach(c => c.classList.remove('active-right'));
-                        cell.classList.add('active-right');
-                        rightGloveCell = { row, col };
-                    }
-                } else {
-                    if (cell.classList.contains('active-left')) {
-                        cell.classList.remove('active-left');
-                        leftGloveCell = null;
-                    } else {
-                        document.querySelectorAll('.grid-cell.active-left').forEach(c => c.classList.remove('active-left'));
-                        cell.classList.add('active-left');
-                        leftGloveCell = { row, col };
-                    }
-                }
-                
-                detectStanceFromGrid();
-            });
-        });
-        
-        // Map grid positions to stances
-        function detectStanceFromGrid() {
-            if (!leftGloveCell && !rightGloveCell) {
-                setStance('idle');
-                return;
-            }
-            
-            const lg = leftGloveCell;
-            const rg = rightGloveCell;
-            
-            // Both gloves up (guard)
-            if (lg && rg && lg.row === 0 && rg.row === 0) {
-                setStance('guard');
-            }
-            // Left jab (left glove top right, right glove top)
-            else if (lg && lg.row === 0 && lg.col === 1 && (!rg || rg.row === 0)) {
-                setStance('jabLeft');
-            }
-            // Right jab (right glove top left, left glove top)
-            else if (rg && rg.row === 0 && rg.col === 0 && (!lg || lg.row === 0)) {
-                setStance('jabRight');
-            }
-            // Left hook (left glove middle left)
-            else if (lg && lg.row === 1 && lg.col === 0) {
-                setStance('hookLeft');
-            }
-            // Right hook (right glove middle right)
-            else if (rg && rg.row === 1 && rg.col === 1) {
-                setStance('hookRight');
-            }
-            // Duck left (both gloves bottom left or left glove bottom)
-            else if (lg && lg.row === 2 && lg.col === 0) {
-                setStance('duckLeft');
-            }
-            // Duck right (both gloves bottom right or right glove bottom)
-            else if (rg && rg.row === 2 && rg.col === 1) {
-                setStance('duckRight');
-            }
-            // Block body (gloves in middle)
-            else if ((lg && lg.row === 1) || (rg && rg.row === 1)) {
-                setStance('blockBody');
-            }
-            else {
-                setStance('idle');
-            }
-        }
-        
-        // Create stance gallery
-        function createStanceGallery() {
-            const gallery = document.getElementById('stanceGallery');
-            
-            Object.keys(stances).forEach(stanceKey => {
-                const preview = document.createElement('div');
-                preview.className = 'stance-preview';
-                preview.onclick = () => setStance(stanceKey);
-                
-                const miniCanvas = document.createElement('canvas');
-                miniCanvas.width = 120;
-                miniCanvas.height = 150;
-                
-                const miniCtx = miniCanvas.getContext('2d');
-                
-                // Background
-                miniCtx.fillStyle = '#2d2d44';
-                miniCtx.fillRect(0, 0, 120, 150);
-                
-                // Simple floor
-                miniCtx.fillStyle = '#4a90a4';
-                miniCtx.fillRect(0, 110, 120, 40);
-                
-                // Draw mini boxer
-                drawBoxer(miniCtx, stanceKey, 60, 85, 0.55);
-                
-                preview.appendChild(miniCanvas);
-                
-                const label = document.createElement('div');
-                label.className = 'label';
-                label.textContent = stances[stanceKey].name;
-                preview.appendChild(label);
-                
-                gallery.appendChild(preview);
-            });
-        }
-        
-        // Initialize
-        createStanceGallery();
-        render();
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            switch(e.key.toLowerCase()) {
-                case '1': setStance('idle'); break;
-                case '2': setStance('guard'); break;
-                case 'q': setStance('jabLeft'); break;
-                case 'e': setStance('jabRight'); break;
-                case 'a': setStance('hookLeft'); break;
-                case 'd': setStance('hookRight'); break;
-                case 'z': setStance('duckLeft'); break;
-                case 'c': setStance('duckRight'); break;
-                case 's': setStance('blockBody'); break;
-            }
+            // Initialize camera detection
+            await CameraDetection.init();
         });
     </script>
 </body>
