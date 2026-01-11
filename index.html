@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxing Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #222;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            text-align: center;
+            border: 2px solid #555;
+            padding: 20px;
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Boxing Game</h1>
+        <p>Welcome to the ring!</p>
+        <canvas id="gameCanvas" width="400" height="400" style="border:1px solid #000; background: #eee;"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'red';
+        ctx.fillRect(175, 175, 50, 50); // Just a placeholder square
+    </script>
+</body>
+</html>
