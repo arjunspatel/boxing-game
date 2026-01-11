@@ -129,37 +129,21 @@ h1 {
     pointer-events: none;
 }
 
-/* Grid overlay on camera */
+/* Grid overlay on camera - hidden for cleaner look */
 .grid-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    pointer-events: none;
+    display: none; /* Grid removed for smoother experience */
 }
 
 .grid-cell-overlay {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
-    transition: background 0.1s;
+    display: none;
 }
 
 .grid-cell-overlay.left-hand {
-    background: rgba(233, 69, 96, 0.4);
-    border-color: #e94560;
+    display: none;
 }
 
 .grid-cell-overlay.right-hand {
-    background: rgba(78, 205, 196, 0.4);
-    border-color: #4ecdc4;
+    display: none;
 }
 
 .camera-status {

@@ -480,10 +480,10 @@ const BoxingGame3D = (function() {
             const depthOffset = -leftHandData.depth * 1.2;
             const targetZ = DEFAULT_POSITIONS.left.z + depthOffset;
             
-            // Smooth interpolation (faster response)
-            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.2;
-            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.2;
-            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.25;
+            // Smooth interpolation (very fast response for instant feel)
+            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.5;
+            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.5;
+            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.6;
             
             // Rotation based on position
             leftGlove.rotation.y = 0.2 + (leftHandData.position.x - 0.5) * 0.3;
@@ -498,10 +498,10 @@ const BoxingGame3D = (function() {
             const depthOffset = -rightHandData.depth * 1.2;
             const targetZ = DEFAULT_POSITIONS.right.z + depthOffset;
             
-            // Smooth interpolation (faster response)
-            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.2;
-            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.2;
-            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.25;
+            // Smooth interpolation (very fast response for instant feel)
+            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.5;
+            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.5;
+            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.6;
             
             rightGlove.rotation.y = -0.2 + (rightHandData.position.x - 0.5) * 0.3;
         }
@@ -510,7 +510,7 @@ const BoxingGame3D = (function() {
     function updatePunchAnimations(delta) {
         // Left punch animation
         if (leftPunchAnimation.active && leftGlove) {
-            leftPunchAnimation.progress += delta * 8; // Speed of punch
+            leftPunchAnimation.progress += delta * 16; // Speed of punch (doubled for snappier feel)
             
             if (leftPunchAnimation.progress < 1) {
                 // Punch forward
@@ -528,7 +528,7 @@ const BoxingGame3D = (function() {
         
         // Right punch animation
         if (rightPunchAnimation.active && rightGlove) {
-            rightPunchAnimation.progress += delta * 8;
+            rightPunchAnimation.progress += delta * 16; // Speed of punch (doubled for snappier feel)
             
             if (rightPunchAnimation.progress < 1) {
                 const punchZ = -Math.sin(rightPunchAnimation.progress * Math.PI) * 

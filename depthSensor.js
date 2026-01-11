@@ -7,9 +7,9 @@
 const DepthSensor = (function() {
     // Calibration constants
     const REFERENCE_HAND_SIZE = 0.15; // Reference hand size at neutral position
-    const DEPTH_SMOOTHING = 0.4; // Smoothing factor for depth estimation (higher = more responsive)
-    const VELOCITY_THRESHOLD = 0.008; // Threshold for detecting forward punch (lower = more sensitive)
-    const PUNCH_COOLDOWN = 250; // Milliseconds between punch detections
+    const DEPTH_SMOOTHING = 0.7; // Smoothing factor for depth estimation (higher = more responsive)
+    const VELOCITY_THRESHOLD = 0.006; // Threshold for detecting forward punch (lower = more sensitive)
+    const PUNCH_COOLDOWN = 80; // Milliseconds between punch detections (reduced for responsiveness)
     
     // State tracking for each hand
     let leftHandState = createHandState();
@@ -26,7 +26,7 @@ const DepthSensor = (function() {
             
             // Depth history for velocity calculation
             depthHistory: [],
-            historyMaxLength: 10,
+            historyMaxLength: 5, // Reduced for faster velocity response
             
             // Velocity (change in depth per frame)
             velocity: 0,
@@ -151,17 +151,11 @@ const DepthSensor = (function() {
             handState.depthHistory.shift();
         }
         
-        // Calculate velocity (change in depth)
+        // Calculate velocity (change in depth) - use fewer samples for faster response
         if (handState.depthHistory.length >= 2) {
             const len = handState.depthHistory.length;
-            // Use average of recent changes for smoother velocity
-            let totalVelocity = 0;
-            const samples = Math.min(5, len - 1);
-            for (let i = 0; i < samples; i++) {
-                totalVelocity += handState.depthHistory[len - 1 - i] - 
-                                 handState.depthHistory[len - 2 - i];
-            }
-            handState.velocity = totalVelocity / samples;
+            // Use just last 2 samples for instant velocity detection
+            handState.velocity = handState.depthHistory[len - 1] - handState.depthHistory[len - 2];
         }
         
         // Update position and scale
