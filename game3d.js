@@ -473,17 +473,17 @@ const BoxingGame3D = (function() {
         if (leftHandData && leftGlove) {
             // Map hand position to glove position
             // X: -0.5 to 0.5 camera coords, Y: adjust height, Z: depth for punch
-            const targetX = DEFAULT_POSITIONS.left.x + (leftHandData.position.x - 0.5) * 0.4;
-            const targetY = DEFAULT_POSITIONS.left.y - (leftHandData.position.y - 0.5) * 0.4;
+            const targetX = DEFAULT_POSITIONS.left.x + (leftHandData.position.x - 0.5) * 0.5;
+            const targetY = DEFAULT_POSITIONS.left.y - (leftHandData.position.y - 0.5) * 0.5;
             
             // Depth affects z position (forward punch) - increased multiplier for more movement
-            const depthOffset = -leftHandData.depth * 1.2;
+            const depthOffset = -leftHandData.depth * 1.5;
             const targetZ = DEFAULT_POSITIONS.left.z + depthOffset;
             
-            // Smooth interpolation (faster response)
-            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.2;
-            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.2;
-            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.25;
+            // Near-instant interpolation for minimal latency
+            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.6;
+            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.6;
+            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.7;
             
             // Rotation based on position
             leftGlove.rotation.y = 0.2 + (leftHandData.position.x - 0.5) * 0.3;
@@ -491,17 +491,17 @@ const BoxingGame3D = (function() {
         
         // Right glove
         if (rightHandData && rightGlove) {
-            const targetX = DEFAULT_POSITIONS.right.x + (rightHandData.position.x - 0.5) * 0.4;
-            const targetY = DEFAULT_POSITIONS.right.y - (rightHandData.position.y - 0.5) * 0.4;
+            const targetX = DEFAULT_POSITIONS.right.x + (rightHandData.position.x - 0.5) * 0.5;
+            const targetY = DEFAULT_POSITIONS.right.y - (rightHandData.position.y - 0.5) * 0.5;
             
             // Depth affects z position (forward punch) - increased multiplier for more movement
-            const depthOffset = -rightHandData.depth * 1.2;
+            const depthOffset = -rightHandData.depth * 1.5;
             const targetZ = DEFAULT_POSITIONS.right.z + depthOffset;
             
-            // Smooth interpolation (faster response)
-            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.2;
-            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.2;
-            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.25;
+            // Near-instant interpolation for minimal latency
+            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.6;
+            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.6;
+            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.7;
             
             rightGlove.rotation.y = -0.2 + (rightHandData.position.x - 0.5) * 0.3;
         }

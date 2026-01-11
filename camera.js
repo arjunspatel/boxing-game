@@ -7,9 +7,9 @@ const CameraDetection = (function() {
     let onStanceDetected = null;
     let onPunchDetected = null;
     
-    // Grid configuration: 2 columns (left/right), 3 rows (top/middle/bottom)
-    const GRID_COLS = 2;
-    const GRID_ROWS = 3;
+    // Grid configuration: 4 columns, 4 rows for smoother transitions
+    const GRID_COLS = 4;
+    const GRID_ROWS = 4;
     
     // Hand positions in grid
     let leftHandGrid = null;
@@ -360,8 +360,8 @@ const CameraDetection = (function() {
         const leftDepthEl = document.getElementById('leftHandDepth');
         const rightDepthEl = document.getElementById('rightHandDepth');
         
-        const rowNames = ['Top', 'Middle', 'Bottom'];
-        const colNames = ['Left', 'Right'];
+        const rowNames = ['Top', 'Upper', 'Lower', 'Bottom'];
+        const colNames = ['Far Left', 'Left', 'Right', 'Far Right'];
         
         if (leftPosEl) {
             if (leftHandGrid) {
@@ -399,42 +399,51 @@ const CameraDetection = (function() {
         }
     }
     
-    // Detect stance from grid positions
+    // Detect stance from grid positions (updated for 4x4 grid)
     function detectStance() {
         let stance = 'idle';
         
         const lg = leftHandGrid;
         const rg = rightHandGrid;
         
+        // With 4x4 grid: rows 0-1 = top, row 2 = middle, row 3 = bottom
+        // cols 0-1 = left side, cols 2-3 = right side
+        
         if (!lg && !rg) {
             stance = 'idle';
         } else if (lg && rg) {
-            if (lg.row === 0 && rg.row === 0) {
-                if (lg.col === 0 && rg.col === 0) {
+            const bothTop = lg.row <= 1 && rg.row <= 1;
+            const bothBottom = lg.row >= 3 && rg.row >= 3;
+            const bothMiddle = lg.row === 2 && rg.row === 2;
+            const leftSide = lg.col <= 1 && rg.col <= 1;
+            const rightSide = lg.col >= 2 && rg.col >= 2;
+            
+            if (bothTop) {
+                if (leftSide) {
                     stance = 'guardLeft';
-                } else if (lg.col === 1 && rg.col === 1) {
+                } else if (rightSide) {
                     stance = 'guardRight';
                 } else {
                     stance = 'guard';
                 }
-            } else if (lg.row === 2 && rg.row === 2) {
-                stance = lg.col === 0 ? 'duckLeft' : 'duckRight';
-            } else if (lg.row === 1 && rg.row === 1) {
+            } else if (bothBottom) {
+                stance = lg.col <= 1 ? 'duckLeft' : 'duckRight';
+            } else if (bothMiddle) {
                 stance = 'blockBody';
-            } else if (lg.row === 0 && rg.row >= 1) {
+            } else if (lg.row <= 1 && rg.row >= 2) {
                 stance = 'jabLeft';
-            } else if (rg.row === 0 && lg.row >= 1) {
+            } else if (rg.row <= 1 && lg.row >= 2) {
                 stance = 'jabRight';
             } else {
                 stance = 'guard';
             }
         } else if (lg && !rg) {
-            if (lg.row === 0) stance = 'jabLeft';
-            else if (lg.row === 1) stance = lg.col === 0 ? 'hookLeft' : 'blockBody';
+            if (lg.row <= 1) stance = 'jabLeft';
+            else if (lg.row === 2) stance = lg.col <= 1 ? 'hookLeft' : 'blockBody';
             else stance = 'duckLeft';
         } else if (rg && !lg) {
-            if (rg.row === 0) stance = 'jabRight';
-            else if (rg.row === 1) stance = rg.col === 1 ? 'hookRight' : 'blockBody';
+            if (rg.row <= 1) stance = 'jabRight';
+            else if (rg.row === 2) stance = rg.col >= 2 ? 'hookRight' : 'blockBody';
             else stance = 'duckRight';
         }
         
