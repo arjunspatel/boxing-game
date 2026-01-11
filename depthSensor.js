@@ -24,9 +24,16 @@ const DepthSensor = (function() {
             depth: 0,
             smoothedDepth: 0,
             
+            // Raw depth components (for debugging)
+            rawPalmZ: 0,        // Raw MediaPipe z-coordinate
+            scaleDepth: 0,      // Depth derived from hand scale
+            rawCombinedDepth: 0, // Combined before smoothing
+            
             // Depth history for velocity calculation
             depthHistory: [],
+            velocityHistory: [], // For graph visualization
             historyMaxLength: 5, // Reduced for faster velocity response
+            velocityHistoryMaxLength: 50, // Longer history for graph
             
             // Velocity (change in depth per frame)
             velocity: 0,
@@ -141,6 +148,11 @@ const DepthSensor = (function() {
         // Palm z is more reliable, scale helps confirm forward movement
         const rawDepth = (palmDepth * 0.6 + scaleDepth * 0.4) * 1.5; // Amplify depth signal
         
+        // Store raw values for debugging
+        handState.rawPalmZ = palmDepth;
+        handState.scaleDepth = scaleDepth;
+        handState.rawCombinedDepth = rawDepth;
+        
         // Smooth the depth reading
         handState.smoothedDepth = handState.smoothedDepth * (1 - DEPTH_SMOOTHING) + 
                                    rawDepth * DEPTH_SMOOTHING;
@@ -156,6 +168,12 @@ const DepthSensor = (function() {
             const len = handState.depthHistory.length;
             // Use just last 2 samples for instant velocity detection
             handState.velocity = handState.depthHistory[len - 1] - handState.depthHistory[len - 2];
+        }
+        
+        // Update velocity history for graph visualization
+        handState.velocityHistory.push(handState.velocity);
+        if (handState.velocityHistory.length > handState.velocityHistoryMaxLength) {
+            handState.velocityHistory.shift();
         }
         
         // Update position and scale
@@ -268,20 +286,47 @@ const DepthSensor = (function() {
     function getDebugData() {
         return {
             left: {
-                depth: leftHandState.depth.toFixed(3),
-                velocity: leftHandState.velocity.toFixed(4),
-                scale: leftHandState.scale.toFixed(3),
+                // Raw values
+                rawPalmZ: leftHandState.rawPalmZ,
+                scaleDepth: leftHandState.scaleDepth,
+                rawCombinedDepth: leftHandState.rawCombinedDepth,
+                // Processed values
+                depth: leftHandState.depth,
+                velocity: leftHandState.velocity,
+                scale: leftHandState.scale,
+                // Velocity history for graph
+                velocityHistory: [...leftHandState.velocityHistory],
+                // State
                 isPunching: leftHandState.isPunching,
                 isFist: leftHandState.isFist,
-                power: leftHandState.punchPower.toFixed(2)
+                power: leftHandState.punchPower,
+                // Position
+                position: { ...leftHandState.position }
             },
             right: {
-                depth: rightHandState.depth.toFixed(3),
-                velocity: rightHandState.velocity.toFixed(4),
-                scale: rightHandState.scale.toFixed(3),
+                // Raw values
+                rawPalmZ: rightHandState.rawPalmZ,
+                scaleDepth: rightHandState.scaleDepth,
+                rawCombinedDepth: rightHandState.rawCombinedDepth,
+                // Processed values
+                depth: rightHandState.depth,
+                velocity: rightHandState.velocity,
+                scale: rightHandState.scale,
+                // Velocity history for graph
+                velocityHistory: [...rightHandState.velocityHistory],
+                // State
                 isPunching: rightHandState.isPunching,
                 isFist: rightHandState.isFist,
-                power: rightHandState.punchPower.toFixed(2)
+                power: rightHandState.punchPower,
+                // Position
+                position: { ...rightHandState.position }
+            },
+            // Thresholds for UI display
+            thresholds: {
+                velocityThreshold: VELOCITY_THRESHOLD,
+                punchCooldown: PUNCH_COOLDOWN,
+                depthSmoothing: DEPTH_SMOOTHING,
+                referenceHandSize: REFERENCE_HAND_SIZE
             }
         };
     }
