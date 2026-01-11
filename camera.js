@@ -109,6 +109,12 @@ const CameraDetection = (function() {
                 statusEl.className = 'camera-status active';
             }
             
+            // Re-enable button and update text so user can stop the camera
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Stop Camera';
+            }
+            
             // Start detection loop
             detectLoop();
             
