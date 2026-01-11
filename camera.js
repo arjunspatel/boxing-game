@@ -7,9 +7,10 @@ const CameraDetection = (function() {
     let onStanceDetected = null;
     let onPunchDetected = null;
     
-    // Grid configuration: 2 columns (left/right), 3 rows (top/middle/bottom)
-    const GRID_COLS = 2;
-    const GRID_ROWS = 3;
+    // Grid configuration: finer grid for smoother transitions
+    // Internal grid is 4x6 for smoother detection, but we map to logical zones
+    const GRID_COLS = 4;
+    const GRID_ROWS = 6;
     
     // Hand positions in grid
     let leftHandGrid = null;
@@ -331,26 +332,14 @@ const CameraDetection = (function() {
         }
     }
     
-    // Clear grid highlights
+    // Clear grid highlights (no-op since grid overlay removed)
     function clearGridHighlights() {
-        document.querySelectorAll('.grid-cell-overlay').forEach(cell => {
-            cell.classList.remove('left-hand', 'right-hand');
-        });
+        // Grid overlay removed for smoother experience
     }
     
-    // Update grid highlights based on hand positions
+    // Update grid highlights (no-op since grid overlay removed)
     function updateGridHighlights() {
-        if (leftHandGrid) {
-            const cellIndex = leftHandGrid.row * GRID_COLS + leftHandGrid.col;
-            const cell = document.querySelector(`.grid-cell-overlay[data-index="${cellIndex}"]`);
-            if (cell) cell.classList.add('left-hand');
-        }
-        
-        if (rightHandGrid) {
-            const cellIndex = rightHandGrid.row * GRID_COLS + rightHandGrid.col;
-            const cell = document.querySelector(`.grid-cell-overlay[data-index="${cellIndex}"]`);
-            if (cell) cell.classList.add('right-hand');
-        }
+        // Grid overlay removed for smoother experience
     }
     
     // Update detection info display with depth data
@@ -360,8 +349,9 @@ const CameraDetection = (function() {
         const leftDepthEl = document.getElementById('leftHandDepth');
         const rightDepthEl = document.getElementById('rightHandDepth');
         
-        const rowNames = ['Top', 'Middle', 'Bottom'];
-        const colNames = ['Left', 'Right'];
+        // Map fine grid to display zones (Top/Middle/Bottom, Left/Right)
+        const rowNames = ['Top', 'Top', 'Middle', 'Middle', 'Bottom', 'Bottom'];
+        const colNames = ['Left', 'Left', 'Right', 'Right'];
         
         if (leftPosEl) {
             if (leftHandGrid) {
@@ -399,42 +389,53 @@ const CameraDetection = (function() {
         }
     }
     
-    // Detect stance from grid positions
+    // Detect stance from grid positions - map fine grid to logical zones
     function detectStance() {
         let stance = 'idle';
         
         const lg = leftHandGrid;
         const rg = rightHandGrid;
         
+        // Map fine grid (4x6) to logical zones (2x3)
+        // Rows: 0-1 = Top, 2-3 = Middle, 4-5 = Bottom
+        // Cols: 0-1 = Left, 2-3 = Right
+        const getLogicalRow = (row) => Math.floor(row / 2); // 0-1->0, 2-3->1, 4-5->2
+        const getLogicalCol = (col) => Math.floor(col / 2); // 0-1->0, 2-3->1
+        
+        const lgRow = lg ? getLogicalRow(lg.row) : null;
+        const lgCol = lg ? getLogicalCol(lg.col) : null;
+        const rgRow = rg ? getLogicalRow(rg.row) : null;
+        const rgCol = rg ? getLogicalCol(rg.col) : null;
+        
         if (!lg && !rg) {
             stance = 'idle';
         } else if (lg && rg) {
-            if (lg.row === 0 && rg.row === 0) {
-                if (lg.col === 0 && rg.col === 0) {
+            if (lgRow === 0 && rgRow === 0) {
+                if (lgCol === 0 && rgCol === 0) {
                     stance = 'guardLeft';
-                } else if (lg.col === 1 && rg.col === 1) {
+                } else if (lgCol === 1 && rgCol === 1) {
                     stance = 'guardRight';
                 } else {
                     stance = 'guard';
                 }
-            } else if (lg.row === 2 && rg.row === 2) {
-                stance = lg.col === 0 ? 'duckLeft' : 'duckRight';
-            } else if (lg.row === 1 && rg.row === 1) {
+            } else if (lgRow === 2 && rgRow === 2) {
+                stance = lgCol === 0 ? 'duckLeft' : 'duckRight';
+            } else if (lgRow === 1 && rgRow === 1) {
                 stance = 'blockBody';
-            } else if (lg.row === 0 && rg.row >= 1) {
+            } else if (lgRow === 0 && rgRow >= 1) {
                 stance = 'jabLeft';
-            } else if (rg.row === 0 && lg.row >= 1) {
+            } else if (rgRow === 0 && lgRow >= 1) {
                 stance = 'jabRight';
             } else {
                 stance = 'guard';
             }
         } else if (lg && !rg) {
-            if (lg.row === 0) stance = 'jabLeft';
-            else if (lg.row === 1) stance = lg.col === 0 ? 'hookLeft' : 'blockBody';
+            if (lgRow === 0) stance = 'jabLeft';
+            else if (lgRow === 1) stance = lgCol === 0 ? 'hookLeft' : 'blockBody';
             else stance = 'duckLeft';
         } else if (rg && !lg) {
-            if (rg.row === 0) stance = 'jabRight';
-            else if (rg.row === 1) stance = rg.col === 1 ? 'hookRight' : 'blockBody';
+            if (rgRow === 0) stance = 'jabRight';
+            else if (rgRow === 1) stance = rgCol === 1 ? 'hookRight' : 'blockBody';
             else stance = 'duckRight';
         }
         
