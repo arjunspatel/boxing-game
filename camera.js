@@ -74,6 +74,13 @@ const CameraDetection = (function() {
             video = document.getElementById('cameraFeed');
             canvasOverlay = document.getElementById('cameraOverlay');
             
+            // Clean up any existing stream to prevent resource leaks
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            isRunning = false;
+            
             if (canvasOverlay) {
                 ctxOverlay = canvasOverlay.getContext('2d');
             }
