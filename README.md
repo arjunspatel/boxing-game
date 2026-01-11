@@ -1,36 +1,66 @@
 # 🥊 Camera-Based Boxing Game
 
-A motion-controlled boxing game that uses MediaPipe (or similar tools) to detect player movements and control a boxer avatar.
+A motion-controlled boxing game that uses MediaPipe Hands to detect player movements and control a boxer avatar in real-time.
 
 ## How to Run
 
-Open `index.html` in your browser to see the placeholder graphics demo.
+1. Open `index.html` in a modern web browser (Chrome recommended)
+2. Click "Start Camera" to enable camera detection
+3. Allow camera access when prompted
+4. Move your hands to control the boxer!
 
-## Current Features
+**Note:** You need to serve the files over HTTP/HTTPS for camera access to work. You can use:
+```bash
+# Python 3
+python -m http.server 8000
 
-### Placeholder Graphics
-- **Boxer Avatar**: Viewed from behind (facing away from player), drawn with canvas
-- **9 Different Stances**: Each with unique arm/glove positions
-- **Boxing Ring**: Perspective floor with ropes and mat
-- **Interactive Demo**: Click buttons or use keyboard to preview stances
+# Node.js
+npx serve
+```
+Then open `http://localhost:8000` in your browser.
 
-### Stances Available
+## Project Structure
 
-| Stance | Description | Grid Detection |
-|--------|-------------|----------------|
-| **Idle** | Relaxed stance, gloves down | No gloves detected in key positions |
-| **Guard Up** | Both gloves protecting face | Both gloves in top row |
-| **Left Jab** | Left arm extended forward | Left glove top-right |
-| **Right Jab** | Right arm extended forward | Right glove top-left |
-| **Left Hook** | Left arm swinging wide | Left glove middle-left |
-| **Right Hook** | Right arm swinging wide | Right glove middle-right |
-| **Duck Left** | Crouch and lean left | Left glove bottom-left |
-| **Duck Right** | Crouch and lean right | Right glove bottom-right |
-| **Block Body** | Gloves protecting torso | Gloves in middle row |
+```
+├── index.html    # Main HTML page
+├── styles.css    # All styling
+├── game.js       # Boxer rendering and game logic
+├── camera.js     # MediaPipe hand detection
+└── README.md     # This file
+```
+
+## Features
+
+### Camera-Based Detection
+- **Real-time hand tracking** using MediaPipe Hands
+- **2x3 grid detection** system for intuitive controls
+- **Visual feedback** showing detected hand positions
+- **Mirror display** so movements feel natural
+
+### Boxer Avatar
+- **Viewed from behind** (facing away from player)
+- **13 different stances** with smooth transitions
+- **Canvas-based rendering** with detailed graphics
+- **Boxing ring** with perspective floor, ropes, and mat
+
+## How to Play
+
+| Hand Position | Boxer Action |
+|---------------|--------------|
+| Both hands up (top row) | Guard position |
+| Both hands top-left | Guard + move left |
+| Both hands top-right | Guard + move right |
+| Left hand up only | Left Jab punch |
+| Right hand up only | Right Jab punch |
+| Left hand middle-left | Left Hook |
+| Right hand middle-right | Right Hook |
+| Both hands middle | Block Body |
+| Both hands bottom | Duck |
+| No hands detected | Idle stance |
 
 ## 2x3 Detection Grid System
 
-The camera feed is divided into a 2x3 grid to detect glove positions:
+The camera feed is divided into a 2x3 grid to detect hand positions:
 
 ```
 ┌─────────┬─────────┐
@@ -42,72 +72,61 @@ The camera feed is divided into a 2x3 grid to detect glove positions:
 └─────────┴─────────┘
 ```
 
-### Detection Logic
-
-1. **Guard Position**: Both gloves detected in top row → Guard Up
-2. **Jabs**: One glove moves across to opposite top corner → Jab (cross punch)
-3. **Hooks**: Glove in middle side cell → Hook punch
-4. **Ducking**: Glove drops to bottom row → Duck in that direction
-5. **Body Block**: Both gloves in middle row → Protecting body
-
-## Controls (Demo Mode)
-
-### Keyboard Shortcuts
-- `1` - Idle
-- `2` - Guard Up
-- `Q` - Left Jab
-- `E` - Right Jab
-- `A` - Left Hook
-- `D` - Right Hook
-- `Z` - Duck Left
-- `C` - Duck Right
-- `S` - Block Body
-
-### Grid Interaction
-- **Click** a grid cell to place the left glove (red)
-- **Shift+Click** to place the right glove (cyan)
-- The stance will automatically update based on glove positions
-
-## Planned Features
-
-- [ ] MediaPipe integration for real-time hand tracking
-- [ ] Opponent boxer AI
-- [ ] Health bars and scoring system
-- [ ] Punch impact animations
-- [ ] Sound effects
-- [ ] Match rounds and timer
-- [ ] Different boxer characters/skins
+**Color coding:**
+- **Red highlight** = Left hand detected in that cell
+- **Cyan highlight** = Right hand detected in that cell
 
 ## Technical Details
 
-### Color Scheme
-- **Left Glove**: Red (#e94560)
-- **Right Glove**: Cyan (#4ecdc4)
-- **Ring Mat**: Blue (#4a90a4)
-- **Arena**: Dark blue gradient
+### Dependencies
+- [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands.html) - Hand tracking (loaded via CDN)
 
-### Architecture (Planned)
+### Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │   Camera Feed   │────▶│  MediaPipe Hand  │────▶│  Grid Position  │
 │   (WebRTC)      │     │   Tracking       │     │   Calculator    │
 └─────────────────┘     └──────────────────┘     └────────┬────────┘
-                                                          │
-                                                          ▼
+                                                         │
+                                                         ▼
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │  Game Renderer  │◀────│  Stance State    │◀────│  Stance Mapper  │
-│   (Canvas)      │     │   Machine        │     │                 │
+│   (Canvas)      │     │                  │     │                 │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
 ```
 
+### Color Scheme
+- **Left Hand/Glove**: Red (#e94560)
+- **Right Hand/Glove**: Cyan (#4ecdc4)
+- **Ring Mat**: Blue (#4a90a4)
+- **Arena**: Dark blue gradient
+
 ## Browser Support
 
-Tested on modern browsers:
-- Chrome 90+
+Requires WebRTC camera access:
+- Chrome 90+ (recommended)
 - Firefox 88+
 - Safari 14+
 - Edge 90+
+
+## Tips for Best Detection
+
+1. **Lighting**: Ensure good, even lighting on your hands
+2. **Background**: A plain background helps detection accuracy
+3. **Distance**: Stand 2-3 feet from your camera
+4. **Visibility**: Keep both hands visible in frame
+5. **Gloves**: Wearing actual boxing gloves can help visibility!
+
+## Future Plans
+
+- [ ] Opponent boxer AI
+- [ ] Health bars and scoring system
+- [ ] Punch impact animations
+- [ ] Sound effects
+- [ ] Match rounds and timer
+- [ ] Different boxer characters/skins
+- [ ] Uppercut detection (vertical hand movement)
 
 ## License
 
