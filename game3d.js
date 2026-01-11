@@ -24,8 +24,8 @@ const BoxingGame3D = (function() {
         right: { x: 0.4, y: -0.3, z: -0.6 }
     };
     
-    // Punch extension distance
-    const PUNCH_DISTANCE = 0.8;
+    // Punch extension distance (increased for more dramatic punch)
+    const PUNCH_DISTANCE = 1.2;
     
     // Colors
     const COLORS = {
@@ -255,9 +255,9 @@ const BoxingGame3D = (function() {
         leftGlove.rotation.set(0.3, 0.2, 0.1);
         camera.add(leftGlove);
         
-        // Left arm
+        // Left arm - positioned to connect with wrist band at (0, 0.02, 0.12)
         leftArm = createArm();
-        leftArm.position.set(-0.15, 0.1, 0.25);
+        leftArm.position.set(0, 0.02, 0.32); // Arm center at z=0.32, so front edge is at z=0.12 (wrist)
         leftGlove.add(leftArm);
         
         // Right glove (cyan)
@@ -270,9 +270,9 @@ const BoxingGame3D = (function() {
         rightGlove.rotation.set(0.3, -0.2, -0.1);
         camera.add(rightGlove);
         
-        // Right arm
+        // Right arm - positioned to connect with wrist band at (0, 0.02, 0.12)
         rightArm = createArm();
-        rightArm.position.set(0.15, 0.1, 0.25);
+        rightArm.position.set(0, 0.02, 0.32); // Arm center at z=0.32, so front edge is at z=0.12 (wrist)
         rightGlove.add(rightArm);
         
         // Add camera to scene
@@ -301,8 +301,8 @@ const BoxingGame3D = (function() {
         thumb.castShadow = true;
         group.add(thumb);
         
-        // Wrist band
-        const wristGeometry = new THREE.CylinderGeometry(0.06, 0.07, 0.08, 16);
+        // Wrist band - sized to connect seamlessly with the arm
+        const wristGeometry = new THREE.CylinderGeometry(0.055, 0.06, 0.06, 16);
         const wristMaterial = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             roughness: 0.5
@@ -341,14 +341,16 @@ const BoxingGame3D = (function() {
     function createArm() {
         const group = new THREE.Group();
         
-        // Forearm
-        const armGeometry = new THREE.CylinderGeometry(0.04, 0.05, 0.4, 16);
+        // Forearm - tapered cylinder, wrist end (front) matches wrist band size
+        // The arm extends along Z when rotated, with smaller end toward the glove
+        const armGeometry = new THREE.CylinderGeometry(0.055, 0.065, 0.4, 16);
         const skinMaterial = new THREE.MeshStandardMaterial({
             color: 0xd4a574,
             roughness: 0.7
         });
         const arm = new THREE.Mesh(armGeometry, skinMaterial);
-        arm.rotation.x = Math.PI / 2;
+        arm.rotation.x = Math.PI / 2; // Rotate to extend along Z axis
+        arm.castShadow = true;
         group.add(arm);
         
         return group;
@@ -471,17 +473,17 @@ const BoxingGame3D = (function() {
         if (leftHandData && leftGlove) {
             // Map hand position to glove position
             // X: -0.5 to 0.5 camera coords, Y: adjust height, Z: depth for punch
-            const targetX = DEFAULT_POSITIONS.left.x + (leftHandData.position.x - 0.5) * 0.3;
-            const targetY = DEFAULT_POSITIONS.left.y - (leftHandData.position.y - 0.5) * 0.3;
+            const targetX = DEFAULT_POSITIONS.left.x + (leftHandData.position.x - 0.5) * 0.4;
+            const targetY = DEFAULT_POSITIONS.left.y - (leftHandData.position.y - 0.5) * 0.4;
             
-            // Depth affects z position (forward punch)
-            const depthOffset = -leftHandData.depth * 0.5;
+            // Depth affects z position (forward punch) - increased multiplier for more movement
+            const depthOffset = -leftHandData.depth * 1.2;
             const targetZ = DEFAULT_POSITIONS.left.z + depthOffset;
             
-            // Smooth interpolation
-            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.15;
-            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.15;
-            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.2;
+            // Smooth interpolation (faster response)
+            leftGlove.position.x += (targetX - leftGlove.position.x) * 0.2;
+            leftGlove.position.y += (targetY - leftGlove.position.y) * 0.2;
+            leftGlove.position.z += (targetZ - leftGlove.position.z) * 0.25;
             
             // Rotation based on position
             leftGlove.rotation.y = 0.2 + (leftHandData.position.x - 0.5) * 0.3;
@@ -489,15 +491,17 @@ const BoxingGame3D = (function() {
         
         // Right glove
         if (rightHandData && rightGlove) {
-            const targetX = DEFAULT_POSITIONS.right.x + (rightHandData.position.x - 0.5) * 0.3;
-            const targetY = DEFAULT_POSITIONS.right.y - (rightHandData.position.y - 0.5) * 0.3;
+            const targetX = DEFAULT_POSITIONS.right.x + (rightHandData.position.x - 0.5) * 0.4;
+            const targetY = DEFAULT_POSITIONS.right.y - (rightHandData.position.y - 0.5) * 0.4;
             
-            const depthOffset = -rightHandData.depth * 0.5;
+            // Depth affects z position (forward punch) - increased multiplier for more movement
+            const depthOffset = -rightHandData.depth * 1.2;
             const targetZ = DEFAULT_POSITIONS.right.z + depthOffset;
             
-            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.15;
-            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.15;
-            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.2;
+            // Smooth interpolation (faster response)
+            rightGlove.position.x += (targetX - rightGlove.position.x) * 0.2;
+            rightGlove.position.y += (targetY - rightGlove.position.y) * 0.2;
+            rightGlove.position.z += (targetZ - rightGlove.position.z) * 0.25;
             
             rightGlove.rotation.y = -0.2 + (rightHandData.position.x - 0.5) * 0.3;
         }

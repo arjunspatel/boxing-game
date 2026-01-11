@@ -7,9 +7,9 @@
 const DepthSensor = (function() {
     // Calibration constants
     const REFERENCE_HAND_SIZE = 0.15; // Reference hand size at neutral position
-    const DEPTH_SMOOTHING = 0.3; // Smoothing factor for depth estimation
-    const VELOCITY_THRESHOLD = 0.015; // Threshold for detecting forward punch
-    const PUNCH_COOLDOWN = 300; // Milliseconds between punch detections
+    const DEPTH_SMOOTHING = 0.4; // Smoothing factor for depth estimation (higher = more responsive)
+    const VELOCITY_THRESHOLD = 0.008; // Threshold for detecting forward punch (lower = more sensitive)
+    const PUNCH_COOLDOWN = 250; // Milliseconds between punch detections
     
     // State tracking for each hand
     let leftHandState = createHandState();
@@ -137,8 +137,9 @@ const DepthSensor = (function() {
         // 2. Hand scale (larger = closer, so invert and normalize)
         const scaleDepth = -(handScale - REFERENCE_HAND_SIZE) / REFERENCE_HAND_SIZE;
         
-        // Weighted combination (palm z is more reliable)
-        const rawDepth = palmDepth * 0.7 + scaleDepth * 0.3;
+        // Weighted combination - amplify the depth signal for better detection
+        // Palm z is more reliable, scale helps confirm forward movement
+        const rawDepth = (palmDepth * 0.6 + scaleDepth * 0.4) * 1.5; // Amplify depth signal
         
         // Smooth the depth reading
         handState.smoothedDepth = handState.smoothedDepth * (1 - DEPTH_SMOOTHING) + 
@@ -181,7 +182,8 @@ const DepthSensor = (function() {
             // Punch started!
             handState.isPunching = true;
             handState.punchStartTime = now;
-            handState.punchPower = Math.min(1, Math.abs(handState.velocity) / (VELOCITY_THRESHOLD * 3));
+            // More generous power scaling for better feedback
+            handState.punchPower = Math.min(1, Math.abs(handState.velocity) / (VELOCITY_THRESHOLD * 2));
             
             // Trigger callback
             if (onPunchDetected) {
